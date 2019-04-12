@@ -1,0 +1,6 @@
+NP => D N
+VP => V NP
+S => NP VP 
+D : {a, the}
+N : {mouse, house}
+V : {buys}
