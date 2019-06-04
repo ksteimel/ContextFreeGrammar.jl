@@ -12,28 +12,125 @@ mutable struct Node
 end
 Node(root=nothing, daughters=Array{Node}[]) = Node(root, daughters)
 
-"""
-This is a cyk parsing implementation 
-"""
-function parse_cyk(productions, lexicon, sent, start_symbol="S")
-    # may need to change this up to allow for different  tokenization methods
-    terminals = keys(lexicon)
-    nonterminals = sort(values(productions))
-    nonterminals = Dict(nont => i for (i,nont) in enumerate(nonterminals))
-    tokens = split(sent) 
-    input_length = length(tokens)
-    lattice = zeros(Bool, input_length, input_length, length(nonterminals))
-    # the backpointers are an array of indexes to the pieces that
-    # contributed to making the constituent
-    backpointers = Array{Array}(undef, input_length, input_length)
-    # initial pass for dealing with terminals
-    for (i, token) in enumerate(tokens)
-        nterm_index = nonterminals[productions[token]]
-        lattice[1, i, nterm_index] = true
-        backpointers[1, i] = push!(backpointers[1,i], (0,0,0,0))
+mutable struct EarleyState
+    state_num::Int
+    start_index::Int 
+    end_index::Int
+    right_hand::Array{String}
+    left_hand::String
+    dot_index::Int
+    originating_state_index::Int
+    
+    function EarleyState(state_num::Int,
+                        start_index::Int,
+                        end_index::Int,
+                        right_hand::Array{String},
+                        left_hand::String,
+                        dot_index::Int,
+                        originating_state_index::Int)
+        if dot_index > (length(right_hand) + 1)
+            throw(BoundsError("Unable to declare a state with the given dot index"))
+        elseif dot_index < 1
+            throw(BoundsError("Unable to declare a state with the given dot index"))
+        else
+            new(state_num, 
+                start_index, 
+                end_index,
+                right_hand, 
+                left_hand, 
+                dot_index,
+                originating_state_index)
+        end
     end
+end
+
+"""
+Add keyword version of EarleyState
+"""
+function EarleyState(;state_num, start_index, end_index, right_hand, left_hand, dot_index, originating_state_index)
+    EarleyState(state_num, start_index, end_index, right_hand, left_hand, dot_index, originating_state_index)
+end
+
+"""
+Overload equality for EarleyStates
+"""
+function Base.:(==)(x::EarleyState, y::EarleyState)
+    if x.state_num == y.state_num &&
+        x.start_index == y.start_index &&
+        x.end_index == y.end_index && 
+        x.right_hand == y.right_hand && 
+        x.left_hand == y.left_hand && 
+        x.dot_index == y.dot_index && 
+        x.originating_state_index == y.originating_state_index
+        return true
+    else
+        return false
+    end
+end
+
+function is_incomplete(state::EarleyState)
+    if state.dot_index < (length(state.right_hand) + 1)
+        return true
+    else 
+        return false
+    end
+end
+
+function next_cat(state::EarleyState)
+    return state.right_hand[state.dot_index]
+end
+
+function completer!(state::EarleyState)
+end
+function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleyState)
+    next_category = next_cat(state)
+    right_hands = productions[next_category]
+    println(right_hands)
+    next_state_num = state.state_num + 1
+    for right_hand in right_hands
+        new_state = EarleyState(next_state_num,
+                                i, i, right_hand, 
+                                next_category, 1, state.state_num) 
+        # check on originating_state_index once I write completer
+        push!(charts[i], new_state)
+    end
+end
+
+function scanner!(charts::Array{Array{EarleyState}}, sent, step_index::Int, productions,
+                    lexicon, state::EarleyState, next_category::String)
+    next_word = sent[state.end_index]
+    next_state_num = state.state_num + 1
+    if next_category in lexicon[next_word]
+        new_state = EarleyState(i, i+1, next_word, next_category, 2, 0) # check on originating_state_index once I write completer
+        chart = EarleyState[]
+        push!(charts, chart)
+        push!(charts[i + 1], new_state)
+    end
+end
     
-    
+function parse_earley(productions, lexicon, sent, start_symbol="S")
+    parts_of_speech = unique(collect(Iterators.flatten(values(lexicon))))
+    charts = []
+    chart = EarleyState[]
+    states = EarleyState[]
+    push!(charts, chart)
+    # add initial state
+    push!(charts[1], EarleyState(1, 1, ["S"], "γ", 1, 0))
+    for i=1:(length(sent) + 1)
+        for state in charts[i]
+            next_category = next_cat(state)
+            if is_incomplete(state) && !(next_category in parts_of_speech)
+                preditor!(state, next_category)
+            elseif is_incomplete(state) && next_category in parts_of_speech 
+                scanner!(state, next_category)
+            else
+                completer!(state)
+            end
+        end
+        next_chart = EarleyState[]
+        push!(charts, next_chart)
+    end
+
 end
 """
 This function prints the lattice from its strange boolean format
@@ -83,6 +180,12 @@ todo:
     - optionality using parenthesis
     - repetition using *
     - features
+    
+the lexicon returned takes in words and yields the part of speech 
+candidates. the productions returned take in the left hand side of a rule
+and return the right hand side.
+
+These hash directions are ideal for the earley parsing algorithm
 """
 function read_rules(rule_text)
     # each rule should be on a new line
@@ -130,7 +233,11 @@ function read_rules(rule_text)
             components = split(right_hand)
             components = [string(component) for component in components]
             # need to check if any of the components are optional 
-            productions[Tuple(components)] = left_hand
+            if left_hand in keys(productions)
+                push!(productions[left_hand], Tuple(components))
+            else
+                productions[left_hand] = [Tuple(components)]
+            end
         else
             println(line)
             error("Incorrect line format")
@@ -191,7 +298,17 @@ the following is an incompatible set:
 because of the lack of specification for D in any of the lexical rules
 """
 function verify_system(productions, lexicon)::Bool
-    
+    prod_items = collect(Iterators.flatten(values(productions)))
+    prod_items = unique(prod_items)
+    lex_items = collect(Iterators.flatten(values(lexicon)))
+    lex_items = unique(lex_items)
+    for item in prod_items
+        if !haskey(productions, item) && !(item in lex_items)
+            return false
+        else 
+            return true
+        end
+    end
 end
 end # module
 
