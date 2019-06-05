@@ -85,7 +85,11 @@ This is a simple utility that returns the next next category
 (whether terminal or non-terminal), given the current dot location
 """
 function next_cat(state::EarleyState)
-    return state.right_hand[state.dot_index]
+    if is_incomplete(state)
+        return state.right_hand[state.dot_index]
+    else
+        return "NFound"
+    end
 end
 
 """
@@ -108,7 +112,7 @@ function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
             # the constituent that we just found,
             # then we should move the dot to the right in a new state
             if is_incomplete(old_state) && old_state.right_hand[old_state.dot_index] == obtained_constituent
-                if old_state.end_index == state.begin_index # may need to check this
+                if old_state.end_index == state.start_index # may need to check this
                     new_state = EarleyState(next_state_num, old_state.start_index, 
                                             i, old_state.right_hand, old_state.left_hand,
                                             old_state.dot_index + 1, state.state_num)
@@ -138,9 +142,8 @@ function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
     next_state_num = charts[end][end].state_num + 1
     if next_category in lexicon[next_word]
         new_state = EarleyState(next_state_num, i, i+1, [next_word], next_category, 2, 0)
-        chart = EarleyState[]
+        chart = EarleyState[new_state]
         push!(charts, chart)
-        push!(charts[i + 1], new_state)
     end
 end
     
@@ -156,15 +159,23 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
         for state in charts[i]
             next_category = next_cat(state)
             if is_incomplete(state) && !(next_category in parts_of_speech)
+                println("-" ^ 32)
+                println("predictor")
                 predictor!(charts, i, productions, lexicon, state)
+                println(charts)
             elseif is_incomplete(state) && next_category in parts_of_speech 
+                println("-" ^ 32)
+                println("Scanner" * next_category)
                 scanner!(charts, sent, i, productions, lexicon, state)
+                println(charts)
             else
+                println("-" ^ 32)
+                println("Completer")
+                println(charts)
                 completer!(charts, i, productions, lexicon, state)
+                println(charts)
             end
         end
-        next_chart = EarleyState[]
-        push!(charts, next_chart)
     end
     return chart
 end
