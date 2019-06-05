@@ -55,8 +55,7 @@ end
 Overload equality for EarleyStates
 """
 function Base.:(==)(x::EarleyState, y::EarleyState)
-    if x.state_num == y.state_num &&
-        x.start_index == y.start_index &&
+    if  x.start_index == y.start_index &&
         x.end_index == y.end_index && 
         x.right_hand == y.right_hand && 
         x.left_hand == y.left_hand && 
@@ -68,6 +67,20 @@ function Base.:(==)(x::EarleyState, y::EarleyState)
     end
 end
 
+function Base.show(io::IO, state::EarleyState)
+    dot_index = state.dot_index
+    cmp_string = "|" * rpad(string(state.state_num), 4) * "|" * rpad(state.left_hand, 4) * "->" * 
+                rpad(string(state.right_hand[1:(dot_index - 1)]), 10) * "*" * rpad(join(state.right_hand[dot_index:end], " "), 10) *
+                " <== " * string(state.originating_state_index)
+    print(io, cmp_string)
+end
+function Base.show(io::IO, chart::Array{EarleyState})
+    println("-" ^ 32)
+    for state in chart
+        println(state)
+    end
+    println("-" ^ 32)
+end
 """
 This is a simple uitlity to determine whether a rule is complete
 (e.g. whether the dot has advanced all the way to the right)
@@ -138,10 +151,19 @@ end
 function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
                     lexicon::Dict, state::EarleyState)
     next_category = next_cat(state)
+    next_word = ""
+    if state.end_index > length(sent)
+        return
+    end
     next_word = sent[state.end_index]
     next_state_num = charts[end][end].state_num + 1
     if next_category in lexicon[next_word]
         new_state = EarleyState(next_state_num, i, i+1, [next_word], next_category, 2, 0)
+        for chart in charts
+            if new_state in chart
+                return
+            end
+        end
         chart = EarleyState[new_state]
         push!(charts, chart)
     end
@@ -151,7 +173,6 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
     parts_of_speech = unique(collect(Iterators.flatten(values(lexicon))))
     charts = []
     chart = EarleyState[]
-    states = EarleyState[]
     push!(charts, chart)
     # add initial state
     push!(charts[1], EarleyState(1,1, 1, ["S"], "γ", 1, 0))
@@ -171,7 +192,6 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
             else
                 println("-" ^ 32)
                 println("Completer")
-                println(charts)
                 completer!(charts, i, productions, lexicon, state)
                 println(charts)
             end
