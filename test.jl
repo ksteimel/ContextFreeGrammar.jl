@@ -183,7 +183,15 @@ end
         @test res_state == charts[end][end]
     end
 end
-
+@testset "earley" begin
+    sentence = ["the", "dog", "runs"]
+    productions = Dict("S" => [["VP"], ["NP","VP"]],
+                        "NP" => [["D","N"], ["N"]],
+                        "VP" => [["V"], ["V","NP"]])
+    lexicon = Dict("the" => ["D"], "dog" => ["N", "V"], "runs" => ["V", "N"])
+    chart = CFG.parse_earley(productions, lexicon, sentence)
+    @test length(chart) > 1
+end
 println()
 tokens = ["the","dog","runs","quite","fast"]
 non_terminals = ["NP","VP","Av","Aj","D","N", "V", "AP", "S"]
