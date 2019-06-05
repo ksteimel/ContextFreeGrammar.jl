@@ -68,6 +68,10 @@ function Base.:(==)(x::EarleyState, y::EarleyState)
     end
 end
 
+"""
+This is a simple uitlity to determine whether a rule is complete
+(e.g. whether the dot has advanced all the way to the right)
+"""
 function is_incomplete(state::EarleyState)
     if state.dot_index < (length(state.right_hand) + 1)
         return true
@@ -76,32 +80,64 @@ function is_incomplete(state::EarleyState)
     end
 end
 
+"""
+This is a simple utility that returns the next next category 
+(whether terminal or non-terminal), given the current dot location
+"""
 function next_cat(state::EarleyState)
     return state.right_hand[state.dot_index]
 end
 
-function completer!(state::EarleyState)
+"""
+This is the completer from Earley's algorithm as described in 
+Jurafsky & Martin (2009). 
+
+In essence, this takes a rule which has been completed and
+moves the parse along for all the states that were waiting on the constituent
+produced by this rule.
+
+e.g. if I have S => * NP VP in my chart and I also have NP => D N *,
+then I can move the dot across the NP
+"""
+function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleyState)
+    obtained_constituent = state.left_hand
+    next_state_num = charts[end][end].state_num + 1
+    for chart in charts
+        for old_state in chart
+            # if the right hand side has the dot just before something that matches
+            # the constituent that we just found,
+            # then we should move the dot to the right in a new state
+            if is_incomplete(old_state) && old_state.right_hand[old_state.dot_index] == obtained_constituent
+                if old_state.end_index == state.begin_index # may need to check this
+                    new_state = EarleyState(next_state_num, old_state.start_index, 
+                                            i, old_state.right_hand, old_state.left_hand,
+                                            old_state.dot_index + 1, state.state_num)
+                    push!(charts[i], new_state)
+                end
+            end
+        end
+    end 
 end
 function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleyState)
     next_category = next_cat(state)
     right_hands = productions[next_category]
-    println(right_hands)
-    next_state_num = state.state_num + 1
+    next_state_num = charts[end][end].state_num + 1
     for right_hand in right_hands
         new_state = EarleyState(next_state_num,
                                 i, i, right_hand, 
-                                next_category, 1, state.state_num) 
+                                next_category, 1, 0) 
         # check on originating_state_index once I write completer
         push!(charts[i], new_state)
     end
 end
 
-function scanner!(charts::Array{Array{EarleyState}}, sent, step_index::Int, productions,
-                    lexicon, state::EarleyState, next_category::String)
+function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
+                    lexicon::Dict, state::EarleyState)
+    next_category = next_cat(state)
     next_word = sent[state.end_index]
-    next_state_num = state.state_num + 1
+    next_state_num = charts[end][end].state_num + 1
     if next_category in lexicon[next_word]
-        new_state = EarleyState(i, i+1, next_word, next_category, 2, 0) # check on originating_state_index once I write completer
+        new_state = EarleyState(next_state_num, i, i+1, [next_word], next_category, 2, 0)
         chart = EarleyState[]
         push!(charts, chart)
         push!(charts[i + 1], new_state)
@@ -115,22 +151,22 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
     states = EarleyState[]
     push!(charts, chart)
     # add initial state
-    push!(charts[1], EarleyState(1, 1, ["S"], "γ", 1, 0))
+    push!(charts[1], EarleyState(1,1, 1, ["S"], "γ", 1, 0))
     for i=1:(length(sent) + 1)
         for state in charts[i]
             next_category = next_cat(state)
             if is_incomplete(state) && !(next_category in parts_of_speech)
-                preditor!(state, next_category)
+                predictor!(charts, i, productions, lexicon, state)
             elseif is_incomplete(state) && next_category in parts_of_speech 
-                scanner!(state, next_category)
+                scanner!(charts, sent, i, productions, lexicon, state)
             else
-                completer!(state)
+                completer!(charts, i, productions, lexicon, state)
             end
         end
         next_chart = EarleyState[]
         push!(charts, next_chart)
     end
-
+    return chart
 end
 """
 This function prints the lattice from its strange boolean format
