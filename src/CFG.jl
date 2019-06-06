@@ -70,6 +70,7 @@ function Base.show(io::IO, state::EarleyState)
                 " <== " * string(state.originating_states)
     print(io, cmp_string)
 end
+
 function Base.show(io::IO, chart::Array{EarleyState})
     println("-" ^ 32)
     for state in chart
@@ -89,6 +90,16 @@ function is_incomplete(state::EarleyState)
     end
 end
 
+"""
+Check to see if the state provided spans the entire input
+"""
+function is_spanning(state::EarleyState, sent_length::Int)
+    if state.start_index == 1 && (state.end_index == sent_length + 1)
+        return true
+    else 
+        return false
+    end
+end
 """
 This is a simple utility that returns the next next category 
 (whether terminal or non-terminal), given the current dot location
@@ -217,16 +228,42 @@ function chart_recognize(charts)
     return false
 end
 """
+    ["N" [
+"""
+function build_backtrace_array(state::EarleyState, state_stack::Array)
+    if state.originating_states == [] # base case
+        println("base case")
+        bottom_piece = [state.left_hand, state.right_hand]
+        return bottom_piece
+    else
+        right_piece = Any[state.left_hand]
+        for pointer in state.originating_states
+            println(right_piece)
+            push!(right_piece, build_backtrace_array(state_stack[pointer], state_stack))
+        end
+        return right_piece
+    end
+end
+"""
 This is a method to construct a tree from the backpointers
 generated during the parse
 """
-function chart_to_tree(charts)
+function chart_to_tree(charts, sentence)
     # test that the parse was successful first 
     if !(chart_recognize(charts))
         return
     end
     final_state = charts[end][end]
     states = collect(Iterators.flatten(charts))
+    trees = []
+    for state_i = length(states):-1:1
+        state = states[state_i]
+        if state.left_hand == "γ" && is_spanning(state, length(sentence))
+            traces = build_backtrace_array(state, states)
+            push!(trees, traces)
+        end
+    end
+    println(trees)
 end
 """
 This function prints the lattice from its strange boolean format
