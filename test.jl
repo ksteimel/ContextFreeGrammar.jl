@@ -51,32 +51,32 @@ end
     @test sort(parts_of_speech) == sort(unique(collect(Iterators.flatten(values(lexicon)))))
     @testset "EarleyState" begin
         @testset "ordered_constructor" begin
-            sample_state = CFG.EarleyState(1,2,3,["NP","VP"], "S", 1, 3)
+            sample_state = CFG.EarleyState(1,2,3,["NP","VP"], "S", 1, [3])
             @test sample_state.state_num == 1
             @test sample_state.start_index == 2
             @test sample_state.end_index == 3
             @test sample_state.right_hand == ["NP","VP"]
             @test sample_state.left_hand == "S"
             @test sample_state.dot_index == 1
-            @test sample_state.originating_state_index == 3
+            @test sample_state.originating_states == [3]
         end
         @testset "malformed_construction" begin
-            @test_throws BoundsError CFG.EarleyState(1,2,3,["NP","VP"], "S", 4, 3)
-            @test_throws BoundsError CFG.EarleyState(1,2,3, ["NP","VP"], "S", 0, 3)
-            @test CFG.EarleyState(1,2,3,["NP","VP"], "S", 3, 3).dot_index == 3
+            @test_throws BoundsError CFG.EarleyState(1,2,3,["NP","VP"], "S", 4, [3])
+            @test_throws BoundsError CFG.EarleyState(1,2,3, ["NP","VP"], "S", 0, [3])
+            @test CFG.EarleyState(1,2,3,["NP","VP"], "S", 3, [3]).dot_index == 3
         end
         @testset "state_utils" begin
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, 0)
+            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
             @test CFG.next_cat(initial_state) == "S"
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, 0)
+            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
             @test CFG.is_incomplete(initial_state) == true
-            complete_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 2, 0)
+            complete_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 2, [])
             @test CFG.is_incomplete(complete_state) == false
         end
     end
     @testset "predictor" begin
         chart = CFG.EarleyState[]
-        initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, 0)
+        initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
         push!(chart, initial_state)
         lexicon = Dict("dog" => ["N","V"], "cat" => ["N","Adj"])
         productions = Dict("S" => [["NP","VP"]], 
@@ -86,7 +86,7 @@ end
         charts = [chart]
         CFG.predictor!(charts, step_index, productions, lexicon, initial_state)
         @test length(charts[1]) == 2
-        state_res = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, 0)
+        state_res = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, [])
         @test charts[1][2] == state_res
         ambiguous_productions = Dict("S" => [["CP", "VP"], ["VP"]])
         step_index = 1 
@@ -99,7 +99,7 @@ end
     @testset "scanner" begin
         @testset "no_change" begin
             chart = CFG.EarleyState[]
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, 0)
+            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
             push!(chart, initial_state)
             lexicon = Dict("dog" => ["N","V"],
                             "the" => ["D"],
@@ -107,13 +107,13 @@ end
             productions = Dict("S" => [["NP","VP"], ["VP"]],
                                 "NP" => [["D", "N"], ["N"]],
                                 "VP" => [["VP"], ["VP","NP"]])
-            state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, 0) # predictor applied
+            state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, []) # predictor applied
             push!(chart, state)
-            state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, 0) # predictor applied
+            state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, []) # predictor applied
             push!(chart, state)
-            scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, 0) # predictor applied
+            scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, []) # predictor applied
             push!(chart, scan_state)
-            state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, 0) # predictor applied
+            state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, []) # predictor applied
             push!(chart, state)
             step_index = 1
             charts = [chart]
@@ -126,7 +126,7 @@ end
         end 
         @testset "scan_applies" begin
             chart = CFG.EarleyState[]
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, 0)
+            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [0])
             push!(chart, initial_state)
             lexicon = Dict("dog" => ["N","V"],
                             "the" => ["D"],
@@ -134,13 +134,13 @@ end
             productions = Dict("S" => [["NP","VP"], ["VP"]],
                                 "NP" => [["D", "N"], ["N"]],
                                 "VP" => [["VP"], ["VP","NP"]])
-            state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, 0)
+            state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, [])
             push!(chart, state)
-            state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, 0)
+            state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, [])
             push!(chart, state)
-            scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, 0)
+            scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, [])
             push!(chart, scan_state)
-            state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, 0)
+            state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, [])
             push!(chart, state)
             step_index = 1
             charts = [chart]
@@ -151,13 +151,13 @@ end
             println("here")
             @test length(charts) == 2
             @test length(charts[2]) == 1
-            target_state = CFG.EarleyState(6, 1, 2, ["the"], "D", 2, 0) # come back to that last part
+            target_state = CFG.EarleyState(6, 1, 2, ["the"], "D", 2, []) # come back to that last part
             @test charts[2][1] == target_state
         end
     end
     @testset "completer" begin
         chart = CFG.EarleyState[]
-        initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, 0)
+        initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
         push!(chart, initial_state)
         lexicon = Dict("dog" => ["N","V"],
                         "the" => ["D"],
@@ -165,20 +165,20 @@ end
         productions = Dict("S" => [["NP","VP"], ["VP"]],
                             "NP" => [["D", "N"], ["N"]],
                             "VP" => [["VP"], ["VP","NP"]])
-        state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, 0) # predictor applied
+        state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, []) # predictor applied
         push!(chart, state)
-        state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, 0) # predictor applied
+        state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, []) # predictor applied
         push!(chart, state)
-        scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, 0) # predictor applied
+        scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, []) # predictor applied
         push!(chart, scan_state)
-        state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, 0) # predictor applied
+        state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, []) # predictor applied
         push!(chart, state)
-        state = CFG.EarleyState(6, 1, 2, ["N"], "NP", 2, 0) # scanner applied
+        state = CFG.EarleyState(6, 1, 2, ["N"], "NP", 2, []) # scanner applied
         chart2 = [state]
         charts = [chart, chart2]
         step_index = 2
         CFG.completer!(charts, step_index, productions, lexicon, state)
-        res_state = CFG.EarleyState(7, 1, 2, ["NP", "VP"], "S", 2, 6)
+        res_state = CFG.EarleyState(7, 1, 2, ["NP", "VP"], "S", 2, [6])
         @test length(charts[end]) == 2
         @test res_state == charts[end][end]
     end
@@ -191,7 +191,9 @@ end
     lexicon = Dict("the" => ["D"], "dog" => ["N", "V"], "runs" => ["V", "N"])
     chart = CFG.parse_earley(productions, lexicon, sentence)
     @test length(chart) > 1
+    @test CFG.chart_recognize(chart)
 end
+
 println()
 tokens = ["the","dog","runs","quite","fast"]
 non_terminals = ["NP","VP","Av","Aj","D","N", "V", "AP", "S"]
