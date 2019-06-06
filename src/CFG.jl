@@ -1,4 +1,6 @@
 module CFG
+using Luxor
+using AbstractTrees
 """
 This will be the building block that trees are constructed
 from
@@ -6,12 +8,6 @@ Rather than specifying that all nodes must have two daughters
 (as would be required for most parser implementations), this utilizes 
 an array of daughters so that the same structure can be used to represent flattened tree structures as well. 
 """
-mutable struct Node
-    root::Union{Node, Nothing}
-    daughters::Array{Node}
-end
-Node(root=nothing, daughters=Array{Node}[]) = Node(root, daughters)
-
 mutable struct EarleyState
     state_num::Int
     start_index::Int 
@@ -19,7 +15,7 @@ mutable struct EarleyState
     right_hand::Array{String}
     left_hand::String
     dot_index::Int
-    originating_state_index::Int
+    originating_states::Array{Int}
     
     function EarleyState(state_num::Int,
                         start_index::Int,
@@ -27,7 +23,7 @@ mutable struct EarleyState
                         right_hand::Array{String},
                         left_hand::String,
                         dot_index::Int,
-                        originating_state_index::Int)
+                        originating_states::Array)
         if dot_index > (length(right_hand) + 1)
             throw(BoundsError("Unable to declare a state with the given dot index"))
         elseif dot_index < 1
@@ -39,7 +35,7 @@ mutable struct EarleyState
                 right_hand, 
                 left_hand, 
                 dot_index,
-                originating_state_index)
+                originating_states)
         end
     end
 end
@@ -47,8 +43,8 @@ end
 """
 Add keyword version of EarleyState
 """
-function EarleyState(;state_num, start_index, end_index, right_hand, left_hand, dot_index, originating_state_index)
-    EarleyState(state_num, start_index, end_index, right_hand, left_hand, dot_index, originating_state_index)
+function EarleyState(;state_num, start_index, end_index, right_hand, left_hand, dot_index, originating_states)
+    EarleyState(state_num, start_index, end_index, right_hand, left_hand, dot_index, originating_states)
 end
 
 """
@@ -60,7 +56,7 @@ function Base.:(==)(x::EarleyState, y::EarleyState)
         x.right_hand == y.right_hand && 
         x.left_hand == y.left_hand && 
         x.dot_index == y.dot_index && 
-        x.originating_state_index == y.originating_state_index
+        x.originating_states == y.originating_states
         return true
     else
         return false
@@ -70,8 +66,8 @@ end
 function Base.show(io::IO, state::EarleyState)
     dot_index = state.dot_index
     cmp_string = "|" * rpad(string(state.state_num), 4) * "|" * rpad(state.left_hand, 4) * "->" * 
-                rpad(string(state.right_hand[1:(dot_index - 1)]), 10) * "*" * rpad(join(state.right_hand[dot_index:end], " "), 10) *
-                " <== " * string(state.originating_state_index)
+                lpad(join(state.right_hand[1:(dot_index - 1)], " "), 10) * "*" * rpad(join(state.right_hand[dot_index:end], " "), 10) *
+                " <== " * string(state.originating_states)
     print(io, cmp_string)
 end
 function Base.show(io::IO, chart::Array{EarleyState})
@@ -126,10 +122,13 @@ function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
             # then we should move the dot to the right in a new state
             if is_incomplete(old_state) && old_state.right_hand[old_state.dot_index] == obtained_constituent
                 if old_state.end_index == state.start_index # may need to check this
+                    backpointers = old_state.originating_states[1:end]
+                    backpointers = push!(backpointers, state.state_num)
                     new_state = EarleyState(next_state_num, old_state.start_index, 
                                             i, old_state.right_hand, old_state.left_hand,
-                                            old_state.dot_index + 1, state.state_num)
+                                            old_state.dot_index + 1, backpointers)
                     push!(charts[i], new_state)
+                    next_state_num += 1
                 end
             end
         end
@@ -142,9 +141,10 @@ function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
     for right_hand in right_hands
         new_state = EarleyState(next_state_num,
                                 i, i, right_hand, 
-                                next_category, 1, 0) 
-        # check on originating_state_index once I write completer
+                                next_category, 1, []) 
+        # check on originating_states once I write completer
         push!(charts[i], new_state)
+        next_state_num += 1
     end
 end
 
@@ -158,7 +158,7 @@ function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
     next_word = sent[state.end_index]
     next_state_num = charts[end][end].state_num + 1
     if next_category in lexicon[next_word]
-        new_state = EarleyState(next_state_num, i, i+1, [next_word], next_category, 2, 0)
+        new_state = EarleyState(next_state_num, i, i+1, [next_word], next_category, 2, [])
         for chart in charts
             if new_state in chart
                 return
@@ -175,7 +175,7 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
     chart = EarleyState[]
     push!(charts, chart)
     # add initial state
-    push!(charts[1], EarleyState(1,1, 1, ["S"], "γ", 1, 0))
+    push!(charts[1], EarleyState(1,1, 1, ["S"], "γ", 1, []))
     for i=1:(length(sent) + 1)
         for state in charts[i]
             next_category = next_cat(state)
@@ -197,7 +197,36 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
             end
         end
     end
-    return chart
+    return charts
+end
+"""
+This is a recognizer. Given a chart, it determines if the 
+sentence parsed is possible given the grammar used for parsing
+
+if it returns true then the sentence is in the grammar and the parse
+was successful. 
+if it returns false then the sentence is not in the grammar.
+"""
+function chart_recognize(charts)
+    final_state = charts[end][end]
+    if final_state.left_hand == "γ" && final_state.right_hand == ["S"]
+        if final_state.dot_index == length(final_state.right_hand) + 1
+            return true
+        end
+    end
+    return false
+end
+"""
+This is a method to construct a tree from the backpointers
+generated during the parse
+"""
+function chart_to_tree(charts)
+    # test that the parse was successful first 
+    if !(chart_recognize(charts))
+        return
+    end
+    final_state = charts[end][end]
+    states = collect(Iterators.flatten(charts))
 end
 """
 This function prints the lattice from its strange boolean format
@@ -224,13 +253,6 @@ function print_lattice(lattice, non_terminals, tokens)
         println(row_string)
     end
     println("-" ^ (1 + n_cols * 6))
-end
-"""
-This function parses a single sentence using the lexicon 
-and production rules provided
-"""
-function parse_sent(productions, lexicon, sent)
-    
 end
 function parse(productions, lexicon, text)
     # split sentences
