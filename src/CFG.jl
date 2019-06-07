@@ -463,6 +463,13 @@ function verify_system(productions, lexicon)::Bool
         end
     end
 end
+
+"""
+Determines what the width of a tree drawing should be
+Currently, this needs some work as the size of daughter-sep is
+exponentially decaying as we go further and further down in the tree.
+However, this function does not take that into account. 
+""
 function find_extents(tree::Array, daughter_sep, layer_sep)
     terms = get_terminals(tree)
     total_width = daughter_sep / 2
@@ -473,15 +480,18 @@ function find_extents(tree::Array, daughter_sep, layer_sep)
     total_depth += layer_sep
     return total_width, total_depth
 end
-function tree_svg(outer_tree::Array, filename::String)
-    daughter_sep = 150
-    layer_sep = 50
+"""
+Writes a tree graphic at the filepath specified.
+"""
+function tree_img(outer_tree::Array, filename::String)
+    daughter_sep = 150 # this decays as we recursively build the tree
+    layer_sep = 50 # this remains constant throughout the drawing
     width, depth = find_extents(outer_tree, daughter_sep, layer_sep)
     println(string(width) * " " * string(depth))
     Drawing(width, depth, filename)
     background("white")
     sethue("black")
-    begin_x = floor(width/6)
+    begin_x = floor(width/6) #this probably needs to be tested with a variety of trees
     println(begin_x)
     begin_y = 20
     start = Point(begin_x, begin_y)
