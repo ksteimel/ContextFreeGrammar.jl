@@ -191,20 +191,20 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
         for state in charts[i]
             next_category = next_cat(state)
             if is_incomplete(state) && !(next_category in parts_of_speech)
-                println("-" ^ 32)
-                println("predictor")
                 predictor!(charts, i, productions, lexicon, state)
-                println(charts)
+                # println("-" ^ 32)
+                # println("predictor")
+                # println(charts)
             elseif is_incomplete(state) && next_category in parts_of_speech 
-                println("-" ^ 32)
-                println("Scanner" * next_category)
                 scanner!(charts, sent, i, productions, lexicon, state)
-                println(charts)
+                # println("-" ^ 32)
+                # println("Scanner" * next_category)
+                # println(charts)
             else
-                println("-" ^ 32)
-                println("Completer")
                 completer!(charts, i, productions, lexicon, state)
-                println(charts)
+                # println("-" ^ 32)
+                # println("Completer")
+                # println(charts)
             end
         end
     end
@@ -232,13 +232,11 @@ end
 """
 function build_backtrace_array(state::EarleyState, state_stack::Array)
     if state.originating_states == [] # base case
-        println("base case")
         bottom_piece = [state.left_hand, state.right_hand]
         return bottom_piece
     else
         right_piece = Any[state.left_hand]
         for pointer in state.originating_states
-            println(right_piece)
             push!(right_piece, build_backtrace_array(state_stack[pointer], state_stack))
         end
         return right_piece
@@ -258,12 +256,41 @@ function chart_to_tree(charts, sentence)
     trees = []
     for state_i = length(states):-1:1
         state = states[state_i]
-        if state.left_hand == "γ" && is_spanning(state, length(sentence))
+        if state.left_hand == "S" && is_spanning(state, length(sentence))
             traces = build_backtrace_array(state, states)
             push!(trees, traces)
         end
     end
-    println(trees)
+    return trees
+end
+"""
+This is a utility to get a list of the terminal
+nodes in the tree. In essence, grab the individual words.
+"""
+function get_terminals(tree)
+    if typeof(tree) <: Array && length(tree) == 1
+        return tree[1]
+    else
+        non_terms = []
+        for daughter in tree[2:end]
+            push!(non_terms, get_terminals(daughter))
+        end
+        return collect(Leaves(non_terms))
+    end
+end
+"""
+Returns the maximum depth of the tree
+"""
+function get_depth(tree, marker=0)
+    if typeof(tree) <: Array && length(tree) == 1
+        return marker
+    else
+        depths = []
+        for daughter in tree[2:end]
+            push!(depths, get_depth(daughter, marker + 1))
+        end
+    return max(collect(Leaves(depths))...)
+    end
 end
 """
 This function prints the lattice from its strange boolean format
@@ -435,6 +462,87 @@ function verify_system(productions, lexicon)::Bool
             return true
         end
     end
+end
+function find_extents(tree::Array, daughter_sep, layer_sep)
+    terms = get_terminals(tree)
+    total_width = daughter_sep / 2
+    total_width += daughter_sep * length(terms)
+    total_width += daughter_sep / 2
+    layers = get_depth(tree)
+    total_depth = layer_sep * layers
+    total_depth += layer_sep
+    return total_width, total_depth
+end
+function tree_svg(outer_tree::Array, filename::String)
+    daughter_sep = 150
+    layer_sep = 50
+    width, depth = find_extents(outer_tree, daughter_sep, layer_sep)
+    println(string(width) * " " * string(depth))
+    Drawing(width, depth, filename)
+    background("white")
+    sethue("black")
+    begin_x = floor(width/6)
+    println(begin_x)
+    begin_y = 20
+    start = Point(begin_x, begin_y)
+    origin(start)
+    fontface("Georgia-Bold")
+    fontsize(12)
+    function place_point(tree, x, y, x_sep)
+        if typeof(tree) <: Array && length(tree) == 1
+            term_location = Point(x, y)
+            text(tree[1], term_location, halign=:center, valign=:middle)
+        else
+            non_term_location = Point(x, y)
+            non_term_line_attach = Point(x, y + (layer_sep / 5))
+            text(tree[1], non_term_location, halign=:center, valign=:middle)
+            daughters = tree[2:end]
+            xs = zeros(length(daughters))
+            ys = repeat([y + layer_sep], length(daughters))
+            if iseven(length(daughters))
+                left_center_i = Integer(floor(length(daughters) / 2))
+                prev_x = x - Integer(round(layer_sep / 2))
+                xs[left_center_i] = prev_x
+                for daughter_i = (left_center_i - 1):-1:1
+                    new_x = prev_x - x_sep
+                    xs[daugher_i] = new_x 
+                    prev_x = new_x
+                end
+                prev_x = xs[left_center_i]
+                for daughter_i = (left_center_i + 1):length(daughters)
+                    new_x = prev_x + x_sep
+                    xs[daughter_i] = new_x
+                    prev_x = new_x
+                end
+            else
+                center_i = Integer(ceil(length(daughters) / 2))
+                prev_x = x
+                xs[center_i] = prev_x
+                for daughter_i = (center_i - 1):-1:1
+                    new_x = prev_x - x_sep
+                    xs[daughter_i] = new_x 
+                    prev_x = new_x
+                end
+                prev_x = xs[center_i]
+                for daughter_i = (center_i + 1):length(daughters)
+                    new_x = prev_x + x_sep
+                    xs[daughter_i] = new_x
+                    prev_x = new_x
+                end
+            end
+            x_sep = x_sep ^ .9
+            for daughter_i = 1:length(daughters)
+                daughter = daughters[daughter_i]
+                daughter_line_attach = Point(Integer(round(xs[daughter_i])), Integer(round(ys[daughter_i] - (layer_sep / 5))))
+                line(non_term_line_attach, daughter_line_attach, :stroke)
+                place_point(daughter, xs[daughter_i], ys[daughter_i], x_sep)
+            end
+        end
+        
+    end
+    place_point(outer_tree, begin_x, begin_y, daughter_sep)
+    finish()
+    preview()
 end
 end # module
 
