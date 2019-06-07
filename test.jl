@@ -1,6 +1,6 @@
 using Test
 using AbstractTrees
-include("src/CFG.jl")
+include("../src/CFG.jl")
 @testset "rule_reading" begin
 	simple_rules = """
 			NP -> D N
