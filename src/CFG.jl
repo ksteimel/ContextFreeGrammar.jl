@@ -469,7 +469,7 @@ Determines what the width of a tree drawing should be
 Currently, this needs some work as the size of daughter-sep is
 exponentially decaying as we go further and further down in the tree.
 However, this function does not take that into account. 
-""
+"""
 function find_extents(tree::Array, daughter_sep, layer_sep)
     terms = get_terminals(tree)
     total_width = daughter_sep / 2
