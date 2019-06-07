@@ -1,4 +1,5 @@
 using Test
+using AbstractTrees
 include("src/CFG.jl")
 @testset "rule_reading" begin
 	simple_rules = """
@@ -59,6 +60,9 @@ end
             @test sample_state.left_hand == "S"
             @test sample_state.dot_index == 1
             @test sample_state.originating_states == [3]
+            @test !(CFG.is_spanning(sample_state, 4))
+            spanning_state = CFG.EarleyState(1,1,3,["NP", "VP"], "S", 1, [3])
+            @test CFG.is_spanning(spanning_state, 2)
         end
         @testset "malformed_construction" begin
             @test_throws BoundsError CFG.EarleyState(1,2,3,["NP","VP"], "S", 4, [3])
@@ -192,20 +196,26 @@ end
     chart = CFG.parse_earley(productions, lexicon, sentence)
     @test length(chart) > 1
     @test CFG.chart_recognize(chart)
+    trees = CFG.chart_to_tree(chart, sentence)
+    @test trees[1] == ["S", ["NP", ["D", ["the"]], ["N", ["dog"]]], ["VP", ["V", ["runs"]]]]
+    @test collect(Leaves(trees[1])) == ["S","NP","D", "the","N", "dog","VP", "V", "runs"]
 end
 
-println()
-tokens = ["the","dog","runs","quite","fast"]
-non_terminals = ["NP","VP","Av","Aj","D","N", "V", "AP", "S"]
-lattice = zeros(Bool, 5, 5, length(non_terminals))
-lattice[1,1,5] = true
-lattice[1,2,6] = true
-lattice[1,3,7] = true
-lattice[1,4,3] = true
-lattice[1,5,4] = true
-lattice[2,1,1] = true
-lattice[2,4,8] = true
-lattice[5,1,9] = true
-lattice[3,3,2] = true
+z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
+CFG.tree_svg(z, "testfile.png")
+#println()
+#tokens = ["the","dog","runs","quite","fast"]
+#non_terminals = ["NP","VP","Av","Aj","D","N", "V", "AP", "S"]
+#lattice = zeros(Bool, 5, 5, length(non_terminals))
+#lattice[1,1,5] = true
+#lattice[1,2,6] = true
+#lattice[1,3,7] = true
+#lattice[1,4,3] = true
+#lattice[1,5,4] = true
+#lattice[2,1,1] = true
+#lattice[2,4,8] = true
+#lattice[5,1,9] = true
+#lattice[3,3,2] = true
 
-CFG.print_lattice(lattice, non_terminals, tokens)
+#CFG.print_lattice(lattice, non_terminals, tokens)
+#
