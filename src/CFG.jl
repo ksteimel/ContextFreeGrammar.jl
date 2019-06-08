@@ -1,6 +1,57 @@
 module CFG
 using Luxor
 using AbstractTrees
+
+"""
+This is a structure that will hold the two mappings from 
+parts of speech to words and from words to parts of speech
+
+where the relationship between parts of speech and words is many to many.
+"""
+struct Lexicon
+    pos_mapping::Dict
+    word_mapping::Dict
+    function Lexicon(word_mapping::Dict)
+        pos_mapping = Dict()
+        for word in keys(word_mapping)
+            for pos in word_mapping[word]
+                if haskey(pos_mapping, pos)
+                    push!(pos_mapping[pos], word)
+                else 
+                    pos_mapping[pos] = [word]
+                end
+            end
+        end
+        new(pos_mapping, word_mapping)
+    end
+end
+
+"""
+This is a structure that will hold the two mappings from 
+non_terminal symbols to daughters and from 
+daughters to non_terminal symbols
+
+where the relationship between nonterminals and daughters 
+is many to many.
+"""
+struct Production
+    nterm_mapping::Dict
+    daughter_mapping::Dict
+    function Lexicon(word_mapping::Dict)
+        nterm_mapping = Dict()
+        for word in keys(daughter_mapping)
+            for pos in word_mapping[word]
+                if haskey(nterm_mapping, pos)
+                    push!(nterm_mapping[pos], word)
+                else 
+                    nterm_mapping[pos] = [word]
+                end
+            end
+        end
+        new(nterm_mapping, daughter_mapping)
+    end
+end
+
 """
 This will be the building block that trees are constructed
 from
@@ -8,6 +59,19 @@ Rather than specifying that all nodes must have two daughters
 (as would be required for most parser implementations), this utilizes 
 an array of daughters so that the same structure can be used to represent flattened tree structures as well. 
 """
+mutable struct Node
+    root::Node
+    daughters::Array{Node}
+    label::String 
+    function Node(label)
+        
+    end
+end
+
+function build_nodes(tree::Array)
+    if length(tree) == 1
+        return Node(tree[
+end
 mutable struct EarleyState
     state_num::Int
     start_index::Int 
@@ -79,7 +143,7 @@ function Base.show(io::IO, chart::Array{EarleyState})
     println("-" ^ 32)
 end
 """
-This is a simple uitlity to determine whether a rule is complete
+This is a simple utility to determine whether a rule is complete
 (e.g. whether the dot has advanced all the way to the right)
 """
 function is_incomplete(state::EarleyState)
@@ -145,6 +209,7 @@ function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
         end
     end 
 end
+
 function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleyState)
     next_category = next_cat(state)
     right_hands = productions[next_category]
