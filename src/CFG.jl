@@ -452,14 +452,16 @@ the following is an incompatible set:
 because of the lack of specification for D in any of the lexical rules
 """
 function verify_productions(productions, lexicon)::Bool
+    println(lexicon)
     prod_items = collect(Iterators.flatten(values(productions)))
     prod_items = unique(prod_items)
     lex_items = collect(Iterators.flatten(values(lexicon)))
     lex_items = unique(lex_items)
-    for item in prod_items
-        if !haskey(productions, item) && !(item in lex_items)
-            println(item)
-            return false
+    for options in prod_items
+        for piece in options
+            if !haskey(productions, piece) && !(piece in lex_items)
+                return false
+            end
         end
     end
     return true
