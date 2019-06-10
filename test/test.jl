@@ -7,7 +7,7 @@ include("../src/CFG.jl")
 			D : dog
 			"""
 	productions, lexicon = CFG.read_rules(simple_rules)
-	res_productions = Dict("NP" => [("D", "N")])
+	res_productions = Dict("NP" => [["D", "N"]])
 	res_lexicon = Dict("dog" => ["D"])
 	@test res_productions == productions
 	@test res_lexicon == lexicon
@@ -16,7 +16,7 @@ include("../src/CFG.jl")
 				D : {dog, cat, mouse}
 				"""
 	productions, lexicon = CFG.read_rules(multi_part_lexicon)
-	res_productions = Dict("NP" => [("Q", "N")])
+	res_productions = Dict("NP" => [["Q", "N"]])
 	res_lexicon = Dict("dog" => ["D"], "cat" => ["D"], "mouse" => ["D"])
 	@test res_lexicon == lexicon
 	@test res_productions == productions
@@ -32,7 +32,7 @@ include("../src/CFG.jl")
                             NP -> Adj N
                             """
     productions, lexicon = CFG.read_rules(ambiguous_production)
-    res_productions = Dict("NP" => [("D","N"), ("Adj","N")])
+    res_productions = Dict("NP" => [["D","N"], ["Adj","N"]])
     @test productions == res_productions
 end
 
@@ -202,7 +202,7 @@ end
 end
 
 z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
-CFG.tree_svg(z, "testfile.png")
+CFG.tree_img(z, "testfile.png")
 #println()
 #tokens = ["the","dog","runs","quite","fast"]
 #non_terminals = ["NP","VP","Av","Aj","D","N", "V", "AP", "S"]
