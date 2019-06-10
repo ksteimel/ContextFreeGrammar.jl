@@ -153,9 +153,11 @@ function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
         new_state = EarleyState(next_state_num,
                                 i, i, right_hand, 
                                 next_category, 1, []) 
-        # check on originating_states once I write completer
-        push!(charts[i], new_state)
-        next_state_num += 1
+        # don't add a new state if it's the same as another state you've already added
+        if charts[i][end] != new_state
+            push!(charts[i], new_state)
+            next_state_num += 1
+        end
     end
 end
 
@@ -238,6 +240,7 @@ function build_backtrace_array(state::EarleyState, state_stack::Array)
         right_piece = Any[state.left_hand]
         for pointer in state.originating_states
             push!(right_piece, build_backtrace_array(state_stack[pointer], state_stack))
+            println(right_piece)
         end
         return right_piece
     end
@@ -257,6 +260,7 @@ function chart_to_tree(charts, sentence)
     for state_i = length(states):-1:1
         state = states[state_i]
         if state.left_hand == "S" && is_spanning(state, length(sentence))
+            println()
             traces = build_backtrace_array(state, states)
             push!(trees, traces)
         end
@@ -565,7 +569,6 @@ function tree_img(outer_tree::Array, filename::String)
     end
     place_point(outer_tree, begin_x, begin_y, daughter_sep)
     finish()
-    preview()
 end
 end # module
 
