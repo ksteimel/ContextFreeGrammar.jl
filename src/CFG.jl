@@ -532,7 +532,7 @@ function tree_img(outer_tree::Array, filename::String)
                 xs[left_center_i] = prev_x
                 for daughter_i = (left_center_i - 1):-1:1
                     new_x = prev_x - x_sep
-                    xs[daugher_i] = new_x 
+                    xs[daughter_i] = new_x 
                     prev_x = new_x
                 end
                 prev_x = xs[left_center_i]
