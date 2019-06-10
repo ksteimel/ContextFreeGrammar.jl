@@ -40,14 +40,14 @@ end
     productions = Dict("NP" => ["D","N"], "VP" => ["V", "NP"])
     lexicon = Dict("dog" => ["N", "V"], "the" => ["D"])
     sent = ["the", "dog"]
-    @test CFG.verify_system(productions, lexicon, sent) == true
+    @test CFG.verify_productions(productions, lexicon) == true
     productions = Dict("NP" => ["D","N"], "VP" => ["V", "NP"])
     lexicon = Dict("dog" => ["N", "V"])
     one_word_sent = ["dog"]
-    @test CFG.verify_system(productions, lexicon, one_word_sent) == false
+    @test CFG.verify_productions(productions, lexicon) == false
     lexicon = Dict("dog" => ["N", "D", "V"])
-    @test CFG.verify_system(productions, lexicon, one_word_sent) == true
-    @test CFG.verify_system(productions, lexicon, sent) == false
+    @test CFG.verify_lexicon(lexicon, one_word_sent) == true
+    @test CFG.verify_lexicon(lexicon, sent) == false
 end
 
 @testset "earley_pieces" begin
