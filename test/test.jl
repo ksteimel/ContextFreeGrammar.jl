@@ -37,17 +37,20 @@ include("../src/CFG.jl")
 end
 
 @testset "rule_verify" begin
-    productions = Dict("NP" => ["D","N"], "VP" => ["V", "NP"])
+    productions = Dict("NP" => [["D","N"]], "VP" => [["V", "NP"]])
     lexicon = Dict("dog" => ["N", "V"], "the" => ["D"])
     sent = ["the", "dog"]
     @test CFG.verify_productions(productions, lexicon) == true
-    productions = Dict("NP" => ["D","N"], "VP" => ["V", "NP"])
+    productions = Dict("NP" => [["D","N"]], "VP" => [["V", "NP"]])
     lexicon = Dict("dog" => ["N", "V"])
     one_word_sent = ["dog"]
     @test CFG.verify_productions(productions, lexicon) == false
     lexicon = Dict("dog" => ["N", "D", "V"])
     @test CFG.verify_lexicon(lexicon, one_word_sent) == true
     @test CFG.verify_lexicon(lexicon, sent) == false
+    # testing with phrases because that seems to cause an error 
+    productions = Dict("S" => [["NP", "VP"]], "NP" => [["D","N"]], "VP" => [["V", "NP"]])
+
 end
 
 @testset "earley_pieces" begin
