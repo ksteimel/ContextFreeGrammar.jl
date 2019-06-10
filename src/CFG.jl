@@ -387,9 +387,9 @@ function read_rules(rule_text)
             components = [string(component) for component in components]
             # need to check if any of the components are optional 
             if left_hand in keys(productions)
-                push!(productions[left_hand], Tuple(components))
+                push!(productions[left_hand], components)
             else
-                productions[left_hand] = [Tuple(components)]
+                productions[left_hand] = [components]
             end
         else
             println(line)
