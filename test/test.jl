@@ -39,11 +39,15 @@ end
 @testset "rule_verify" begin
     productions = Dict("NP" => ["D","N"], "VP" => ["V", "NP"])
     lexicon = Dict("dog" => ["N", "V"], "the" => ["D"])
-    @test CFG.verify_system(productions, lexicon) == true
+    sent = ["the", "dog"]
+    @test CFG.verify_system(productions, lexicon, sent) == true
     productions = Dict("NP" => ["D","N"], "VP" => ["V", "NP"])
     lexicon = Dict("dog" => ["N", "V"])
-    @test CFG.verify_system(productions, lexicon) == false
-    
+    one_word_sent = ["dog"]
+    @test CFG.verify_system(productions, lexicon, one_word_sent) == false
+    lexicon = Dict("dog" => ["N", "D", "V"])
+    @test CFG.verify_system(productions, lexicon, one_word_sent) == true
+    @test CFG.verify_system(productions, lexicon, sent) == false
 end
 
 @testset "earley_pieces" begin
@@ -199,8 +203,21 @@ end
     trees = CFG.chart_to_tree(chart, sentence)
     @test trees[1] == ["S", ["NP", ["D", ["the"]], ["N", ["dog"]]], ["VP", ["V", ["runs"]]]]
     @test collect(Leaves(trees[1])) == ["S","NP","D", "the","N", "dog","VP", "V", "runs"]
+    sentence2 = ["I", "bought", "fireworks", "in", "Pennsylvania"]
+    productions = Dict("S" => [["NP","VP"]],
+                        "NP" => [["N"]],
+                        "VP" => [["V"], ["V", "NP"], ["V", "NP", "PP"]],
+                        "PP" => [["P", "NP"]])
+    lexicon = Dict("I" => ["N"], "bought" => ["V"], "fireworks" => ["N"], "in" => ["P"], "Pennsylvania" => ["N"])
+    chart = CFG.parse_earley(productions, lexicon, sentence2)
+    
 end
-
+@testset "drawing_utils" begin
+    parse_tree = ["S", ["NP", ["I"]], ["VP", ["V", ["fireworks"]]], ["PP", ["P", ["in"]], ["NP", ["N", ["Pennsylvania"]]]]]
+    depth = 4
+    println(CFG.get_depth(parse_tree))
+    @test CFG.get_depth(parse_tree) == depth
+end
 z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
 CFG.tree_img(z, "testfile.png")
 #println()
