@@ -458,7 +458,7 @@ function verify_productions(productions, lexicon)::Bool
     lex_items = unique(lex_items)
     for item in prod_items
         if !haskey(productions, item) && !(item in lex_items)
-            
+            println(item)
             return false
         end
     end
@@ -468,6 +468,7 @@ end
 function verify_lexicon(lexicon, sentence)::Bool
     for word in sentence
         if !haskey(lexicon, word)
+            println(word)
             return false
         end
     end
