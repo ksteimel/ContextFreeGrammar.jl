@@ -294,7 +294,7 @@ function get_depth(tree, marker=0)
             push!(depths, get_depth(daughter, marker + 1))
         end
         #println(collect(Leaves(depths)))
-        return max(Leaves(depths)...)
+        return max(collect(Leaves(depths))...)
     end
 end
 """
