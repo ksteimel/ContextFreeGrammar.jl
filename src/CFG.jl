@@ -289,7 +289,8 @@ function get_depth(tree, marker=0)
         for daughter in tree[2:end]
             push!(depths, get_depth(daughter, marker + 1))
         end
-    return max(collect(Leaves(depths))...)
+        #println(collect(Leaves(depths)))
+        return max(Leaves(depths)...)
     end
 end
 """
@@ -450,7 +451,7 @@ the following is an incompatible set:
     
 because of the lack of specification for D in any of the lexical rules
 """
-function verify_system(productions, lexicon)::Bool
+function verify_system(productions, lexicon, sentence)::Bool
     prod_items = collect(Iterators.flatten(values(productions)))
     prod_items = unique(prod_items)
     lex_items = collect(Iterators.flatten(values(lexicon)))
@@ -458,10 +459,14 @@ function verify_system(productions, lexicon)::Bool
     for item in prod_items
         if !haskey(productions, item) && !(item in lex_items)
             return false
-        else 
-            return true
         end
     end
+    for word in sentence
+        if !haskey(lexicon, word)
+            return false
+        end
+    end
+    return true
 end
 
 """
