@@ -154,7 +154,7 @@ function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
                                 i, i, right_hand, 
                                 next_category, 1, []) 
         # don't add a new state if it's the same as another state you've already added
-        if charts[end][end] != new_state
+        if new_state not in charts[end]
             push!(charts[end], new_state)
             next_state_num += 1
         end
