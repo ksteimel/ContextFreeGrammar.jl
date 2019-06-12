@@ -138,7 +138,7 @@ function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
                     new_state = EarleyState(next_state_num, old_state.start_index, 
                                             i, old_state.right_hand, old_state.left_hand,
                                             old_state.dot_index + 1, backpointers)
-                    push!(charts[i], new_state)
+                    push!(charts[end], new_state)
                     next_state_num += 1
                 end
             end
@@ -154,8 +154,8 @@ function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
                                 i, i, right_hand, 
                                 next_category, 1, []) 
         # don't add a new state if it's the same as another state you've already added
-        if charts[i][end] != new_state
-            push!(charts[i], new_state)
+        if charts[end][end] != new_state
+            push!(charts[end], new_state)
             next_state_num += 1
         end
     end
@@ -182,7 +182,7 @@ function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
     end
 end
     
-function parse_earley(productions, lexicon, sent, start_symbol="S")
+function parse_earley(productions, lexicon, sent, start_symbol="S"; debug=false)
     parts_of_speech = unique(collect(Iterators.flatten(values(lexicon))))
     charts = []
     chart = EarleyState[]
@@ -194,19 +194,25 @@ function parse_earley(productions, lexicon, sent, start_symbol="S")
             next_category = next_cat(state)
             if is_incomplete(state) && !(next_category in parts_of_speech)
                 predictor!(charts, i, productions, lexicon, state)
-                # println("-" ^ 32)
-                # println("predictor")
-                # println(charts)
+                if debug
+                    println("-" ^ 32)
+                    println("predictor")
+                    println(charts)
+                end
             elseif is_incomplete(state) && next_category in parts_of_speech 
                 scanner!(charts, sent, i, productions, lexicon, state)
-                # println("-" ^ 32)
-                # println("Scanner" * next_category)
-                # println(charts)
+                if debug
+                    println("-" ^ 32)
+                    println("Scanner" * next_category)
+                    println(charts)
+                end
             else
                 completer!(charts, i, productions, lexicon, state)
-                # println("-" ^ 32)
-                # println("Completer")
-                # println(charts)
+                if debug
+                    println("-" ^ 32)
+                    println("Completer")
+                    println(charts)
+                end
             end
         end
     end
