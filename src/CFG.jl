@@ -112,6 +112,13 @@ function next_cat(state::EarleyState)
     end
 end
 
+function increment_state_nums!(chart, start_num)
+    for state in chart
+        state.state_num = start_num
+        start_num += 1
+    end
+end
+
 """
 This is the completer from Earley's algorithm as described in 
 Jurafsky & Martin (2009). 
@@ -125,7 +132,8 @@ then I can move the dot across the NP
 """
 function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleyState)
     obtained_constituent = state.left_hand
-    next_state_num = charts[end][end].state_num + 1
+    next_state_num = charts[i][end].state_num + 1
+    println(next_state_num)
     for chart in charts
         for old_state in chart
             # if the right hand side has the dot just before something that matches
@@ -138,26 +146,34 @@ function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
                     new_state = EarleyState(next_state_num, old_state.start_index, 
                                             i, old_state.right_hand, old_state.left_hand,
                                             old_state.dot_index + 1, backpointers)
-                    push!(charts[end], new_state)
+                    push!(charts[i], new_state)
                     next_state_num += 1
                 end
             end
         end
-    end 
+    end
+    if length(charts) >= i + 1 && length(charts[i + 1]) != 0
+        increment_state_nums!(charts[i + 1], next_state_num)
+    end
 end
+
 function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleyState)
     next_category = next_cat(state)
     right_hands = productions[next_category]
-    next_state_num = charts[end][end].state_num + 1
+    next_state_num = charts[i][end].state_num + 1
+    println(next_state_num)
     for right_hand in right_hands
         new_state = EarleyState(next_state_num,
                                 i, i, right_hand, 
                                 next_category, 1, []) 
         # don't add a new state if it's the same as another state you've already added
-        if !(new_state in charts[end])
-            push!(charts[end], new_state)
+        if !(new_state in charts[i])
+            push!(charts[i], new_state)
             next_state_num += 1
         end
+    end
+    if length(charts) >= i + 1 && length(charts[i + 1]) != 0
+        increment_state_nums!(charts[i + 1], next_state_num)
     end
 end
 
@@ -169,7 +185,11 @@ function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
         return
     end
     next_word = sent[state.end_index]
-    next_state_num = charts[end][end].state_num + 1
+    next_state_num = charts[i][end].state_num + 1
+    if length(charts[i + 1]) != 0
+        next_state_num = charts[i+1][end].state_num + 1
+    end
+    println(next_state_num)
     if next_category in lexicon[next_word]
         new_state = EarleyState(next_state_num, i, i+1, [next_word], next_category, 2, [])
         for chart in charts
@@ -177,16 +197,18 @@ function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
                 return
             end
         end
-        chart = EarleyState[new_state]
-        push!(charts, chart)
+        if length(charts[i+1]) == 0 || charts[i+1][end] != new_state
+            push!(charts[i+1], new_state)
+        end
     end
 end
     
 function parse_earley(productions, lexicon, sent, start_symbol="S"; debug=false)
     parts_of_speech = unique(collect(Iterators.flatten(values(lexicon))))
     charts = []
-    chart = EarleyState[]
-    push!(charts, chart)
+    for i=1:length(sent) + 1
+        push!(charts, EarleyState[])
+    end
     # add initial state
     push!(charts[1], EarleyState(1,1, 1, ["S"], "γ", 1, []))
     for i=1:(length(sent) + 1)
@@ -238,15 +260,15 @@ end
 """
     ["N" [
 """
-function build_backtrace_array(state::EarleyState, state_stack::Array)
+function build_backtrace_array(state::EarleyState, state_stack::Array, ; offset="--")
     if state.originating_states == [] # base case
         bottom_piece = [state.left_hand, state.right_hand]
         return bottom_piece
     else
         right_piece = Any[state.left_hand]
         for pointer in state.originating_states
-            push!(right_piece, build_backtrace_array(state_stack[pointer], state_stack))
-            println(right_piece)
+            push!(right_piece, build_backtrace_array(state_stack[pointer], state_stack, offset=offset*"--"))
+            println(offset * string(right_piece))
         end
         return right_piece
     end
