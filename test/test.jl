@@ -94,7 +94,7 @@ end
                             "NP" => [["N"]],
                             "VP" => [["V"]])
         step_index = 1
-        charts = [chart]
+        charts = [chart, CFG.EarleyState[]]
         CFG.predictor!(charts, step_index, productions, lexicon, initial_state)
         @test length(charts[1]) == 2
         state_res = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, [])
@@ -103,7 +103,7 @@ end
         step_index = 1 
         chart = CFG.EarleyState[]
         push!(chart, initial_state)
-        charts = [chart]
+        charts = [chart, CFG.EarleyState[]]
         CFG.predictor!(charts, step_index, ambiguous_productions, lexicon, initial_state)
         @test length(charts[1]) == 3
     end
@@ -127,12 +127,12 @@ end
             state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, []) # predictor applied
             push!(chart, state)
             step_index = 1
-            charts = [chart]
-            @test length(charts) == 1
+            charts = [chart, CFG.EarleyState[], CFG.EarleyState[]]
+            @test length(charts) == 3
             @test length(charts[1]) == 5
             sentence = ["the", "dog", "ran"]
             CFG.scanner!(charts, sentence, step_index, productions, lexicon, state) # this should not change anything
-            @test length(charts) == 1
+            @test length(charts) == 3
             @test length(charts[1]) == 5
         end 
         @testset "scan_applies" begin
@@ -154,13 +154,12 @@ end
             state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, [])
             push!(chart, state)
             step_index = 1
-            charts = [chart]
-            @test length(charts) == 1
+            charts = [chart, CFG.EarleyState[], CFG.EarleyState[]]
             @test length(charts[1]) == 5
+            @test length(charts) == 3
             sentence = ["the", "dog", "ran"]
             CFG.scanner!(charts, sentence, step_index, productions, lexicon, scan_state) # this should not change anything
             println("here")
-            @test length(charts) == 2
             @test length(charts[2]) == 1
             target_state = CFG.EarleyState(6, 1, 2, ["the"], "D", 2, []) # come back to that last part
             @test charts[2][1] == target_state
@@ -186,12 +185,12 @@ end
         push!(chart, state)
         state = CFG.EarleyState(6, 1, 2, ["N"], "NP", 2, []) # scanner applied
         chart2 = [state]
-        charts = [chart, chart2]
+        charts = [chart, chart2, CFG.EarleyState[]]
         step_index = 2
         CFG.completer!(charts, step_index, productions, lexicon, state)
         res_state = CFG.EarleyState(7, 1, 2, ["NP", "VP"], "S", 2, [6])
-        @test length(charts[end]) == 2
-        @test res_state == charts[end][end]
+        @test length(charts[2]) == 2
+        @test res_state == charts[2][end]
     end
 end
 @testset "earley" begin
@@ -200,7 +199,7 @@ end
                         "NP" => [["D","N"], ["N"]],
                         "VP" => [["V"], ["V","NP"]])
     lexicon = Dict("the" => ["D"], "dog" => ["N", "V"], "runs" => ["V", "N"])
-    chart = CFG.parse_earley(productions, lexicon, sentence)
+    chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
     @test length(chart) > 1
     @test CFG.chart_recognize(chart)
     trees = CFG.chart_to_tree(chart, sentence)
@@ -212,8 +211,9 @@ end
                         "VP" => [["V"], ["V", "NP"], ["V", "NP", "PP"]],
                         "PP" => [["P", "NP"]])
     lexicon = Dict("I" => ["N"], "bought" => ["V"], "fireworks" => ["N"], "in" => ["P"], "Pennsylvania" => ["N"])
-    chart = CFG.parse_earley(productions, lexicon, sentence2)
-    println(chart)
+    println("beginning_cfg")
+    chart = CFG.parse_earley(productions, lexicon, sentence2, debug=true)
+    #println(chart[1])
     trees = CFG.chart_to_tree(chart, sentence2)
     target_tree = ["S", ["NP", ["N", ["I"]]], 
                     ["VP", ["V", ["bought"]], 
@@ -228,8 +228,8 @@ end
                         "VP" => [["V"], ["V", "PP"], ["V", "P", "PP"]], 
                         "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                         "PP" => [["P", "NP"]])
-    chart = CFG.parse_earley(productions, lexicon, sentence)
-    println(chart)
+    chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
+    #println(chart)
     trees = CFG.chart_to_tree(chart, sentence)
     target_tree =  ["S", 
                         ["NP", 
