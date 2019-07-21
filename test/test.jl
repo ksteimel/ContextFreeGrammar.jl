@@ -267,8 +267,7 @@ productions = Dict("S" => [["NP","VP"], ["VP"]],
                     "NP" => [["D", "N"], ["N"]],
                     "VP" => [["V"], ["V","NP"], ["V", "NP", "PP"]],
                     "PP" => [["D","NP"]])
-rev_lexicon = CFG.rev_lex(lexicon)
-sent = CFG.generate(productions, rev_lexicon, "S")
+sent = CFG.generate(productions, lexicon)
 println(sent)
 
 z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
