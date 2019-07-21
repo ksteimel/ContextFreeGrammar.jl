@@ -488,7 +488,6 @@ the following is an incompatible set:
 because of the lack of specification for D in any of the lexical rules
 """
 function verify_productions(productions, lexicon)::Bool
-    println(lexicon)
     prod_items = collect(Iterators.flatten(values(productions)))
     prod_items = unique(prod_items)
     lex_items = collect(Iterators.flatten(values(lexicon)))
