@@ -1,7 +1,7 @@
 name = "CFG"
 uuid = "62bf7c00-5d6e-11e9-1b55-c7f229017c39"
 authors = ["ksteimel <ksteimel@iu.edu>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
