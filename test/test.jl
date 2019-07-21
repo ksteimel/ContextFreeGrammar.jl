@@ -256,6 +256,21 @@ end
     println(CFG.get_depth(parse_tree))
     @test CFG.get_depth(parse_tree) == depth
 end
+lexicon = Dict("dog" => ["N","V"],
+                "the" => ["D"],
+                "ran" => ["V"],
+                "by" => ["P"],
+                "my" => ["D"],
+                "house" => ["N"],
+                "houses" => ["N"])
+productions = Dict("S" => [["NP","VP"], ["VP"]],
+                    "NP" => [["D", "N"], ["N"]],
+                    "VP" => [["V"], ["V","NP"], ["V", "NP", "PP"]],
+                    "PP" => [["D","NP"]])
+rev_lexicon = CFG.rev_lex(lexicon)
+sent = CFG.generate(productions, rev_lexicon, "S")
+println(sent)
+
 z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
 CFG.tree_img(z, "testfile.png")
 #println()
