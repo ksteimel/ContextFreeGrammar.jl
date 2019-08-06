@@ -37,16 +37,16 @@ mutable struct EarleyState
     state_num::Int
     start_index::Int 
     end_index::Int
-    right_hand::Array{String}
-    left_hand::String
+    right_hand::Array{ProdItem}
+    left_hand::ProdItem
     dot_index::Int
     originating_states::Array{Int}
     
     function EarleyState(state_num::Int,
                         start_index::Int,
                         end_index::Int,
-                        right_hand::Array{String},
-                        left_hand::String,
+                        right_hand::Array{ProdItem},
+                        left_hand::ProdItem,
                         dot_index::Int,
                         originating_states::Array)
         if dot_index > (length(right_hand) + 1)
@@ -356,7 +356,7 @@ nodes in the tree. In essence, grab the individual words.
 """
 function get_terminals(tree)
     if typeof(tree) <: Array && length(tree) == 1
-        return tree[1]
+        return tree[1].symbol
     else
         non_terms = []
         for daughter in tree[2:end]
@@ -454,12 +454,12 @@ function read_rules(rule_text)
             # check to see if we have a multi-part right hand 
             if occursin("{", right_hand)
                 tokens = split(right_hand, r"({|,|}) ?", keepempty=false)
-                left_hand = strip(left_hand)
+                left_hand = ProdItem(strip(left_hand))
                 for token in tokens
-                    token = string(token)
+                    token = ProdItem(string(token))
                     if token in keys(lexicon)
                         lexicon[token] = push!(lexicon[token],
-                                                    left_hand)
+                                                left_hand)
                     else
                         lexicon[token] = [left_hand]
                     end
