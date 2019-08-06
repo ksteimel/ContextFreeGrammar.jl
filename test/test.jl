@@ -7,7 +7,7 @@ include("../src/CFG.jl")
 			D : dog
 			"""
 	productions, lexicon = CFG.read_rules(simple_rules)
-	res_productions = Dict("NP" => [["D", "N"]])
+	res_productions = Dict(ProdItem("NP") => [[ProdItem("D"), ProdItem("N")]])
 	res_lexicon = Dict("dog" => ["D"])
 	@test res_productions == productions
 	@test res_lexicon == lexicon
@@ -85,6 +85,7 @@ end
             @test CFG.is_incomplete(complete_state) == false
         end
     end
+    
     @testset "predictor" begin
         chart = CFG.EarleyState[]
         initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
@@ -107,6 +108,7 @@ end
         CFG.predictor!(charts, step_index, ambiguous_productions, lexicon, initial_state)
         @test length(charts[1]) == 3
     end
+    
     @testset "scanner" begin
         @testset "no_change" begin
             chart = CFG.EarleyState[]
@@ -135,6 +137,7 @@ end
             @test length(charts) == 3
             @test length(charts[1]) == 5
         end 
+        
         @testset "scan_applies" begin
             chart = CFG.EarleyState[]
             initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [0])
@@ -165,6 +168,7 @@ end
             @test charts[2][1] == target_state
         end
     end
+    
     @testset "completer" begin
         chart = CFG.EarleyState[]
         initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
@@ -193,6 +197,7 @@ end
         @test res_state == charts[2][end]
     end
 end
+
 @testset "earley" begin
     sentence = ["the", "dog", "runs"]
     productions = Dict("S" => [["VP"], ["NP","VP"]],
@@ -250,12 +255,22 @@ end
                 ]
     @test target_tree == trees[1]
 end
+
 @testset "drawing_utils" begin
     parse_tree = ["S", ["NP", ["I"]], ["VP", ["V", ["fireworks"]]], ["PP", ["P", ["in"]], ["NP", ["N", ["Pennsylvania"]]]]]
     depth = 4
     println(CFG.get_depth(parse_tree))
     @test CFG.get_depth(parse_tree) == depth
 end
+
+@testset "production class" begin
+    new_item = CFG.ProdItem("S")
+    @test new_item.symbol == "S"
+    @test new_item.optional == false
+    @test new_item.repeat == false
+    @test new_item.feats == []
+end
+
 lexicon = Dict("dog" => ["N","V"],
                 "the" => ["D"],
                 "ran" => ["V"],
@@ -263,9 +278,14 @@ lexicon = Dict("dog" => ["N","V"],
                 "my" => ["D"],
                 "house" => ["N"],
                 "houses" => ["N"])
-productions = Dict("S" => [["NP","VP"], ["VP"]],
-                    "NP" => [["D", "N"], ["N"]],
-                    "VP" => [["V"], ["V","NP"], ["V", "NP", "PP"]],
+
+productions = Dict("S" => [["NP","VP"], 
+                            ["VP"]],
+                    "NP" => [["D", "N"], 
+                            ["N"]],
+                    "VP" => [["V"], 
+                            ["V","NP"], 
+                            ["V", "NP", "PP"]],
                     "PP" => [["D","NP"]])
 sent = CFG.generate(productions, lexicon)
 println(sent)
