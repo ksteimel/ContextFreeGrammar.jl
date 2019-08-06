@@ -1,6 +1,31 @@
 module CFG
 using Luxor
 using AbstractTrees
+
+export ProdItem, EarleyState, verify_productions, verify_lexicon, parse_earley, chart_recognize, get_terminals, read_rules, generate, chart_to_tree, tree_img
+"""
+This contains information about the pieces that 
+make up a production in such a way that the contents
+do not need to be repeatedly processed.
+"""
+struct ProdItem 
+    symbol::String
+    optional::Bool
+    repeat::Bool
+    feats::Array
+end
+
+"""
+Outer constructor for default arguments on ProdItem
+symbol is the only required argument
+"""
+ProdItem(symbol; 
+            optional=false, 
+            repeat=false, 
+            feats=[]) = ProdItem(symbol,
+                                optional,
+                                repeat,
+                                feats)
 """
 This will be the building block that trees are constructed
 from
@@ -63,6 +88,23 @@ function Base.:(==)(x::EarleyState, y::EarleyState)
     end
 end
 
+"""
+Overload equality for ProdItem
+
+this is required so that the production dictionary
+can check equality of keys.
+"""
+function Base.:(==)(x::ProdItem, y::ProdItem)
+    if x.symbol == y.symbol && 
+        x.optional == y.optional &&
+        x.repeat == y.repeat &&
+        x.feats == y.feats
+        return true
+    else
+        return false 
+    end 
+end
+
 function Base.show(io::IO, state::EarleyState)
     dot_index = state.dot_index
     cmp_string = "|" * rpad(string(state.state_num), 4) * "|" * rpad(state.left_hand, 4) * "->" * 
@@ -78,6 +120,7 @@ function Base.show(io::IO, chart::Array{EarleyState})
     end
     println("-" ^ 32)
 end
+
 """
 This is a simple uitlity to determine whether a rule is complete
 (e.g. whether the dot has advanced all the way to the right)
@@ -100,6 +143,7 @@ function is_spanning(state::EarleyState, sent_length::Int)
         return false
     end
 end
+
 """
 This is a simple utility that returns the next next category 
 (whether terminal or non-terminal), given the current dot location
@@ -203,7 +247,14 @@ function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
     end
 end
     
-function parse_earley(productions, lexicon, sent, start_symbol="S"; debug=false)
+"""
+This is the main function that handles parsing of
+sentences given productions, a lexicon and a sentence.
+
+The input sentence should be pre-tokenized.
+sentence = ["the", "dog","ran"]
+"""
+function parse_earley(productions, lexicon, sent::Array{String}, start_symbol="S"; debug=false)
     parts_of_speech = unique(collect(Iterators.flatten(values(lexicon))))
     charts = []
     for i=1:length(sent) + 1
@@ -240,6 +291,7 @@ function parse_earley(productions, lexicon, sent, start_symbol="S"; debug=false)
     end
     return charts
 end
+
 """
 This is a recognizer. Given a chart, it determines if the 
 sentence parsed is possible given the grammar used for parsing
@@ -257,6 +309,7 @@ function chart_recognize(charts)
     end
     return false
 end
+
 """
     ["N" [
 """
@@ -273,6 +326,7 @@ function build_backtrace_array(state::EarleyState, state_stack::Array, ; offset=
         return right_piece
     end
 end
+
 """
 This is a method to construct a tree from the backpointers
 generated during the parse
@@ -295,6 +349,7 @@ function chart_to_tree(charts, sentence)
     end
     return trees
 end
+
 """
 This is a utility to get a list of the terminal
 nodes in the tree. In essence, grab the individual words.
@@ -310,6 +365,7 @@ function get_terminals(tree)
         return collect(Leaves(non_terms))
     end
 end
+
 """
 Returns the maximum depth of the tree
 """
@@ -329,6 +385,7 @@ function get_depth(tree, marker=0)
         end
     end
 end
+
 """
 This function prints the lattice from its strange boolean format
 """
@@ -355,11 +412,13 @@ function print_lattice(lattice, non_terminals, tokens)
     end
     println("-" ^ (1 + n_cols * 6))
 end
+
 function parse(productions, lexicon, text)
     # split sentences
     # call parse_sent on each sentence
     pass
 end
+
 """
 This function reads in a piece of text that contains various rules 
 where the form of syntactic rules is X -> Y Z
@@ -418,10 +477,10 @@ function read_rules(rule_text)
             if length(pieces) != 2
                 error("Mutiple -> symbols in input string")
             end
-            left_hand = strip(pieces[1])
+            left_hand = ProdItem(strip(pieces[1]))
             right_hand = strip(pieces[2])
             components = split(right_hand)
-            components = [string(component) for component in components]
+            components = [ProdItem(string(component)) for component in components]
             # need to check if any of the components are optional 
             if left_hand in keys(productions)
                 push!(productions[left_hand], components)
@@ -435,6 +494,7 @@ function read_rules(rule_text)
     end
     return productions, lexicon
 end
+
 """
 This function creates binary rules from the flat rules presented
 e.g. if we have an input rule `NP -> D Adj N` then this will 
@@ -474,6 +534,7 @@ function binarize!(productions, lexicon)
     end
     return productions, lexicon, pairings
 end
+
 """
 This function checks to make sure that the set of rules are compatible. 
 
