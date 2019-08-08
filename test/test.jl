@@ -283,14 +283,14 @@ lexicon = Dict(PI("dog") => [PI("N"),PI("V")],
                 PI("house") => [PI("N")],
                 PI("houses") => [PI("N")])
 
-productions = Dict("S" => [["NP","VP"], 
-                            ["VP"]],
-                    "NP" => [["D", "N"], 
-                            ["N"]],
-                    "VP" => [["V"], 
-                            ["V","NP"], 
-                            ["V", "NP", "PP"]],
-                    "PP" => [["D","NP"]])
+productions = Dict(PI("S") => [[PI("NP"),PI("VP")], 
+                            [PI("VP")]],
+                    "NP" => [[PI("D"), PI("N")], 
+                            [PI("N")]],
+                    "VP" => [[PI("V")], 
+                            [PI("V"),PI("NP")], 
+                            [PI("V"), PI("NP"), PI("PP")]],
+                    "PP" => [[PI("D"),PI("NP")]])
 sent = CFG.generate(productions, lexicon)
 println(sent)
 
