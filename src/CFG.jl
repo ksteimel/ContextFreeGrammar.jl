@@ -12,7 +12,7 @@ mutable struct EarleyState
     state_num::Int
     start_index::Int 
     end_index::Int
-    right_hand::Array{String}
+    right_hand::Array
     left_hand::String
     dot_index::Int
     originating_states::Array{Int}
@@ -20,7 +20,7 @@ mutable struct EarleyState
     function EarleyState(state_num::Int,
                         start_index::Int,
                         end_index::Int,
-                        right_hand::Array{String},
+                        right_hand::Array,
                         left_hand::String,
                         dot_index::Int,
                         originating_states::Array)
@@ -419,7 +419,7 @@ end
 """
 function interleave_opts(rhs_pieces::Array, opt_mask::Array, pres_mask::Array)
     pres_i = 1
-    res = []
+    res = String[]
     for (mask_i, mask_element) in enumerate(opt_mask)
         if mask_element == false
             push!(res, rhs_pieces[mask_i])
