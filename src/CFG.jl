@@ -493,6 +493,8 @@ where the form of syntactic rules is X -> Y Z
 
 and the form of lexical rules is V : X
 
+lines that begin with "#" are comments
+
 todo: 
     - optionality using parenthesis
     - repetition using *
@@ -511,6 +513,9 @@ function read_rules(rule_text)
     lexicon = Dict()#"null" => ["null"]) # doing this as a cludge to 
     # get dictionaries initialized
     for line in lines
+        if strip(line)[1] == "#"
+            continue
+        end
         if occursin(":", line)
             # we have a lexical rule
             pieces = split(line, ":")
