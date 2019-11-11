@@ -513,7 +513,7 @@ function read_rules(rule_text)
     lexicon = Dict()#"null" => ["null"]) # doing this as a cludge to 
     # get dictionaries initialized
     for line in lines
-        if strip(line)[1] == "#"
+        if strip(line)[1] == '#'
             continue
         end
         if occursin(":", line)
