@@ -508,12 +508,14 @@ These hash directions are ideal for the earley parsing algorithm
 """
 function read_rules(rule_text)
     # each rule should be on a new line
-    lines = split(rule_text, "\n", keepempty=false) 
+    lines = split(rule_text, "\n", keepempty=false)
+    lines = [line for line in lines if line != ""]
     productions = Dict()#"null" => ["null"])
     lexicon = Dict()#"null" => ["null"]) # doing this as a cludge to 
     # get dictionaries initialized
     for line in lines
         if strip(line)[1] == '#'
+            print(line)
             continue
         end
         if occursin(":", line)
