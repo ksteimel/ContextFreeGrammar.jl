@@ -133,7 +133,6 @@ then I can move the dot across the NP
 function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleyState)
     obtained_constituent = state.left_hand
     next_state_num = charts[i][end].state_num + 1
-    println(next_state_num)
     for chart in charts
         for old_state in chart
             # if the right hand side has the dot just before something that matches
@@ -161,7 +160,6 @@ function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
     next_category = next_cat(state)
     right_hands = productions[next_category]
     next_state_num = charts[i][end].state_num + 1
-    println(next_state_num)
     for right_hand in right_hands
         new_state = EarleyState(next_state_num,
                                 i, i, right_hand, 
@@ -476,7 +474,6 @@ function gen_opt_poss(rhs_pieces::Array)
     rhs_pieces = strip_opt(rhs_pieces)
     #this tells us how high we have to count when computing the present masks
     top_end = top_count(n_opts) 
-    println(top_end)
     poss = []
     for i=0:(top_end - 1)
         pres_mask = digits(i, base=2, pad=n_opts)
