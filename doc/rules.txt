@@ -1,0 +1,22 @@
+S -> NP VP
+S -> NP_nom VP
+NP -> D (Adj) N 
+NP -> (D) (Adj) N_pl
+N_pl : {dogs, cats, people, fish}
+VP -> V 
+VP -> V_tr NP
+VP -> V_tr NP_obj
+VP -> V_dt NP_obj NP_obj
+VP -> V_dt NP NP
+VP -> V_dt NP_obj NP
+VP -> V_dt NP NP_obj
+# handling 
+N : {dog, cat, people, fish, processer}
+D : the
+V: ran
+V_tr : {won, ate, purchased, paid}
+V_dt : {gave}
+Adj: {green, fast, decent, magical, blue, stellar, deplorable, wonderful, educated}
+#This is a comment
+NP_nom : {he, she, they, we, you, it}
+NP_obj : {him, her, them, us, you, it}
