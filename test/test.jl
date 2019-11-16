@@ -249,6 +249,36 @@ end
                     ]
                 ]
     @test target_tree == trees[1]
+    @testset "optionality" begin
+        sentence = ["the", "large", "dog", "ran", "by", "the", "house"]
+        lexicon = Dict("the" => ["D"], "ran" => ["V"], "house" => ["N"],
+                        "dog" => ["N"], "red" => ["Adj"], "large" => ["Adj"], 
+                        "to" => ["P"], "in" => ["P"], "by" => ["P"])
+        productions = Dict("S" => [["NP", "VP"]], 
+                            "VP" => [["V", "(P)", "(PP)"]], 
+                            "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
+                            "PP" => [["P", "NP"]])
+        chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
+        #println(chart)
+        trees = CFG.chart_to_tree(chart, sentence)
+        target_tree =  ["S", 
+                            ["NP", 
+                                ["D", ["the"]],
+                                ["Adj", ["large"]], 
+                                ["N", ["dog"]]
+                            ],
+                            ["VP", 
+                            ["V", ["ran"]], 
+                            ["PP", 
+                                ["P", ["by"]], 
+                                ["NP", 
+                                    ["D", ["the"]],
+                                    ["N", ["house"]]
+                                ]
+                            ]
+                        ]
+                    ]
+    end
 end
 @testset "drawing_utils" begin
     parse_tree = ["S", ["NP", ["I"]], ["VP", ["V", ["fireworks"]]], ["PP", ["P", ["in"]], ["NP", ["N", ["Pennsylvania"]]]]]
