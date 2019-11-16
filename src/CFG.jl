@@ -189,7 +189,6 @@ function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
     if length(charts[i + 1]) != 0
         next_state_num = charts[i+1][end].state_num + 1
     end
-    println(next_state_num)
     if next_category in lexicon[next_word]
         new_state = EarleyState(next_state_num, i, i+1, [next_word], next_category, 2, [])
         for chart in charts
