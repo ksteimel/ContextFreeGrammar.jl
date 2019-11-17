@@ -175,8 +175,8 @@ function predictor!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
     end
 end
 
-function scanner!(charts, sent::Array{String}, i::Int, productions::Dict,
-                    lexicon::Dict, state::EarleyState)
+function scanner!(charts, sent::Array{T}, i::Int, productions::Dict,
+                    lexicon::Dict, state::EarleyState) where T <: AbstractString
     next_category = next_cat(state)
     next_word = ""
     if state.end_index > length(sent)
@@ -352,7 +352,17 @@ function print_lattice(lattice, non_terminals, tokens)
     end
     println("-" ^ (1 + n_cols * 6))
 end
-function parse(productions, lexicon, text)
+"""
+This splits a sentence using the function in tokenize.
+
+`tokenizer` is expected to be a function that takes a raw string
+as input and then 
+"""
+function parse_sent(productions, lexicon, sent::String, tokenizer::Function)
+    pass
+
+end
+function parse(productions::Dict, lexicon, text)
     # split sentences
     # call parse_sent on each sentence
     pass
@@ -526,8 +536,8 @@ function read_rules(rule_text)
             if occursin("{", right_hand)
                 tokens = split(right_hand, r"({|,|}) ?", keepempty=false)
                 left_hand = strip(left_hand)
-                for token in tokens
-                    token = string(token)
+                for token_seg in tokens
+                    token = string(token_seg)
                     if token in keys(lexicon)
                         lexicon[token] = push!(lexicon[token],
                                                     left_hand)
