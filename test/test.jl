@@ -255,7 +255,7 @@ end
                         "dog" => ["N"], "red" => ["Adj"], "large" => ["Adj"], 
                         "to" => ["P"], "in" => ["P"], "by" => ["P"])
         productions = Dict("S" => [["NP", "VP"]], 
-                            "VP" => [["V", "(P)", "(PP)"]], 
+                            "VP" => [["V", "P", "PP"], ["V", "P"],["V","PP"],["V"]], 
                             "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                             "PP" => [["P", "NP"]])
         chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
@@ -278,6 +278,20 @@ end
                             ]
                         ]
                     ]
+	@test target_tree == trees[1]
+	@testset "rule_construction_optional_components" begin
+		# test generation of rules in cases of multiple optionality
+		two_opt_components = ["(D)", "N", "(PP)"]
+		target_rhs = sort([["D", "N"], ["D", "N", "PP"], ["N"], ["N", "PP"]])
+		res_rhs = sort(CFG.gen_opt_poss(two_opt_components))
+		@test res_rhs == target_rhs
+		three_opt_components = ["(D)", "(Adj)", "N", "(PP)"]
+		target_rhs = sort([["D", "Adj", "N", "PP"], ["D", "Adj", "N"],
+				   ["D", "N"], ["D", "N", "PP"], ["N"], ["Adj", "N", "PP"],
+				   ["Adj", "N"], ["N", "PP"]])
+		res_rhs = sort(CFG.gen_opt_poss(three_opt_components))
+		@test res_rhs == target_rhs
+	end
     end
 end
 @testset "drawing_utils" begin
