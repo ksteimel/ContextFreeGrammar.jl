@@ -1,5 +1,5 @@
 using CFG
-rule_file = open("../doc/rules.txt")
+rule_file = open("./sample_rules.txt")
 rule_text = readlines(rule_file)
 rule_text = join(rule_text, "\n")
 productions, lexicon = CFG.read_rules(rule_text)
