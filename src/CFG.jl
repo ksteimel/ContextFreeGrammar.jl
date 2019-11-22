@@ -356,17 +356,37 @@ end
 This splits a sentence using the function in tokenize.
 
 `tokenizer` is expected to be a function that takes a raw string
-as input and then 
+as input and then returns an array of SubStrings or an array of Strings
+where each piece corresponds to a single token.
 """
-function parse_sent(productions, lexicon, sent::String, tokenizer::Function)
-    pass
+function parse_sent(productions, lexicon, sent::T; tokenizer::Function=split) where T<:AbstractString
+    words = tokenizer(sent)
+    words = [strip(word) for word in sent if strip(word) != ""]
+    return parse_earley(productions, lexicon, words, debug=false)
+end
 
-end
-function parse(productions::Dict, lexicon, text)
+"""
+This does sentence splitting and then parses each sentence in parallel.
+The number of threads to use during parsing can be controlled by setting the 
+`JULIA_NUM_THREADS` environment variable.
+
+The tokenizer and ssplit functions must take strings in and return
+some array of string pieces (either as full `Strings` or as `SubStrings`.
+"""
+function parse(productions::Dict, lexicon, text; 
+               ssplit::Function=(text) -> split(text, "\n"),
+               tokenizer::Function=split)
     # split sentences
+    sents = ssplit(text)
     # call parse_sent on each sentence
-    pass
+    res_parses = []
+    Threads.@threads for sent in sents
+        if strip(sent) != ""
+            push!(res, parse(productions, lexicon, sent, tokenizer=tokenizer))
+        end
+    end
 end
+
 """
     opt_mask(rhs_pieces::Array; <keyword arguments>)
     
@@ -729,6 +749,27 @@ function find_extents(tree::Array, daughter_sep, layer_sep)
     total_depth = layer_sep * layers
     total_depth += layer_sep
     return total_width, total_depth
+end
+
+"""
+Get the bracketed notation for the provided tree. 
+
+This involves tree traversal
+"""
+function get_bracketed_string(tree)
+    # base case
+    str_res = ""
+    if typeof(tree) == String
+        return tree
+    elseif length(tree) == 1
+        return tree[1]
+    else
+        str_res = "["
+        for sub_tree in tree
+            str_res *= get_bracketed_string(sub_tree) * " "
+        end
+        return str_res * "]"
+    end
 end
 """
 Writes a tree graphic at the filepath specified.
