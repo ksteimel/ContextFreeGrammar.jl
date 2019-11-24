@@ -74,6 +74,21 @@ function shift_tree(tree::Array, x_displacement)
         end
     end
 end
+function naive_point_locate(outer_tree::Array)
+    
+end
+function write_tree_graphic(syntactic_tree::Array, points_tree::Array)
+    width, depth = find_extents(outer_tree, daughter_sep, layer_sep)
+    Drawing(width, depth, filename)
+    background("white")
+    sethue("black")
+    start = Point(points_tree[1].center_x, points_tree[1].center_y)
+    origin(start)
+    fontface("Georgia-Bold")
+    fontsize(12)
+    layer_thickness = 14
+    # recursive place point call
+end
 """
 Writes a tree graphic at the filepath specified.
 
@@ -102,10 +117,7 @@ set from top to bottom.
 function tree_img(outer_tree::Array, filename::String)
     daughter_sep = 150 # this decays as we recursively build the tree
     layer_sep = 50 # this remains constant throughout the drawing
-    width, depth = find_extents(outer_tree, daughter_sep, layer_sep)
-    Drawing(width, depth, filename)
-    background("white")
-    sethue("black")
+
     begin_x = floor(width/6) 
     begin_y = 20
     start = Point(begin_x, begin_y)
