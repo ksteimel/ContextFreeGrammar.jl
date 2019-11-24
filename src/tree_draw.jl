@@ -37,17 +37,37 @@ function get_bracketed_string(tree)
 end
 """
 Writes a tree graphic at the filepath specified.
+
+Here's how the tree drawing algorithm works: 
+--------------------------------------------------
+go through the tree from top to bottom, when you reach a terminal, record where you
+think that point should go into a tree structure and also record the center, left extent,
+and right extent.
+as the stack collapses, the non-terminal nodes will take what they thought their position should be
+as the center, the left extent as the left extent of their first daughter, the right extent as the 
+right extent of their last daughter. 
+
+This proceeds until the naive points for all nodes in the tree have been established
+
+Then, we go through, breadth first and find out of there's overlap between the coordinates for any of
+the daughters. If there are, an offset value is calculated for the x direction. All subtrees for one of
+the overlapping daughters is modified so that they are no longer overlapping.
+
+Then, a last pass is made to ensure that the tree isn't going to be very off center, 
+e.g. if the left extent of the S node is way off base (too far away from 0 on the positive side or negative).
+If this is the case, the whole tree is shifted to make it more centered.
+
+Lastly, a Luxor canvas is prepared with the extents of the top node (plus a margin) and the points are
+set from top to bottom.
 """
 function tree_img(outer_tree::Array, filename::String)
     daughter_sep = 150 # this decays as we recursively build the tree
     layer_sep = 50 # this remains constant throughout the drawing
     width, depth = find_extents(outer_tree, daughter_sep, layer_sep)
-    println(string(width) * " " * string(depth))
     Drawing(width, depth, filename)
     background("white")
     sethue("black")
     begin_x = floor(width/6) #this probably needs to be tested with a variety of trees
-    println(begin_x)
     begin_y = 20
     start = Point(begin_x, begin_y)
     origin(start)
