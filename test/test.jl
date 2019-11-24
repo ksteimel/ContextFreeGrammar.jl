@@ -299,6 +299,16 @@ end
     depth = 4
     println(CFG.get_depth(parse_tree))
     @test CFG.get_depth(parse_tree) == depth
+    @testset "tree_shifting" begin
+        point_tree = [CFG.TreePoint(1,4,0,2), [CFG.TreePoint(0,2,0,0), CFG.TreePoint(1,2,1,2)]]
+        shifted_tree = [CFG.TreePoint(3,4,2,4), [CFG.TreePoint(2,2,2,2), CFG.TreePoint(3,2,3,4)]]
+        CFG.shift_tree(point_tree, 2)
+        @test  point_tree == shifted_tree
+        point_tree = [CFG.TreePoint(1,4,0,2), [CFG.TreePoint(0,2,0,0), CFG.TreePoint(1,2,1,2)]]
+        neg_shifted_tree = [CFG.TreePoint(-1,4,-2,0), [CFG.TreePoint(-2,2,-2,-2), CFG.TreePoint(-1,2,-1,0)]]
+        CFG.shift_tree(point_tree, -2)
+        @test point_tree == neg_shifted_tree
+    end
 end
 lexicon = Dict("dog" => ["N","V"],
                 "the" => ["D"],

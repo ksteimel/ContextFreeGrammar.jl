@@ -35,6 +35,45 @@ function get_bracketed_string(tree)
         return str_res * "]"
     end
 end
+mutable struct TreePoint
+    center_x::Int16
+    center_y::Int16
+    left_extent_x::Int16
+    right_extent_x::Int16
+end
+"""
+Overload equality for TreePoint
+"""
+function Base.:(==)(a::TreePoint, b::TreePoint)
+    if a.center_x == b.center_x &&
+        a.center_y == b.center_y &&
+        a.left_extent_x == b.left_extent_x &&
+        a.right_extent_x == b.right_extent_x 
+        return true
+    else
+        return false
+    end
+end
+function TreePoint(;center_x, center_y, left_extent_x, right_extent_x)
+    TreePoint(center_x, center_y, left_extent_x, left_extent_y)
+end
+function shift_point(tree_point::TreePoint, x_displacement)
+    tree_point.center_x += x_displacement
+    tree_point.left_extent_x += x_displacement
+    tree_point.right_extent_x += x_displacement
+end
+function shift_tree(tree::Array, x_displacement)
+    shift_point(tree[1], x_displacement)
+    if length(tree) > 1
+        for daughter in tree[2]
+            if typeof(daughter) <: Array
+                shift_tree(daughter, x_displacement)
+            else
+                shift_point(daughter, x_displacement)
+            end
+        end
+    end
+end
 """
 Writes a tree graphic at the filepath specified.
 
@@ -67,7 +106,7 @@ function tree_img(outer_tree::Array, filename::String)
     Drawing(width, depth, filename)
     background("white")
     sethue("black")
-    begin_x = floor(width/6) #this probably needs to be tested with a variety of trees
+    begin_x = floor(width/6) 
     begin_y = 20
     start = Point(begin_x, begin_y)
     origin(start)
