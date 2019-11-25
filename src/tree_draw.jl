@@ -55,14 +55,28 @@ function Base.:(==)(a::TreePoint, b::TreePoint)
     end
 end
 function TreePoint(;center_x, center_y, left_extent_x, right_extent_x)
-    TreePoint(center_x, center_y, left_extent_x, left_extent_y)
+    TreePoint(center_x, center_y, left_extent_x, right_extent_x)
 end
 function shift_point(tree_point::TreePoint, x_displacement)
     tree_point.center_x += x_displacement
     tree_point.left_extent_x += x_displacement
     tree_point.right_extent_x += x_displacement
 end
-function shift_tree(tree::Array, x_displacement)
+"""
+Shifts all points in the input tree over by x_displacement.
+If x_displacement is negative, all points are shifted to the
+left. If x_displacement is positive, all points are shifted to the
+right.
+
+Params:
+--------
+tree::Array
+    The syntactic tree (typically a subtree), that is going to be shifted.
+x_displacement<:Numeric
+    The value to shift the tree. Positive shifts the
+    tree right, negative left.
+"""
+function shift_tree(tree::Array, x_displacement<:Numeric)
     shift_point(tree[1], x_displacement)
     if length(tree) > 1
         for daughter in tree[2]
@@ -77,7 +91,19 @@ end
 function naive_point_locate(outer_tree::Array)
     
 end
-function write_tree_graphic(syntactic_tree::Array, points_tree::Array)
+"""
+This function does the actual writing of the tree image once
+all overlap and bounding box issues have been addressed. 
+
+Params:
+--------
+syntactic_tree::Array
+    This is the original syntactic tree that is going to be plotted.
+points_tree::Array
+    This is the tree of coordinate point information that has
+    been built up and modified through other functions
+"""
+function write_tree_graphic(syntactic_tree::Array, points_tree::Array, filename::String)
     width, depth = find_extents(outer_tree, daughter_sep, layer_sep)
     Drawing(width, depth, filename)
     background("white")
@@ -117,24 +143,22 @@ set from top to bottom.
 function tree_img(outer_tree::Array, filename::String)
     daughter_sep = 150 # this decays as we recursively build the tree
     layer_sep = 50 # this remains constant throughout the drawing
-
     begin_x = floor(width/6) 
     begin_y = 20
-    start = Point(begin_x, begin_y)
-    origin(start)
-    fontface("Georgia-Bold")
-    fontsize(12)
-    function place_point(tree, x, y, x_sep)
-        if typeof(tree) <: Array && length(tree) == 1
-            term_location = Point(x, y)
-            text(tree[1], term_location, halign=:center, valign=:middle)
+    node_width = 40
+    function naive_place_point(tree, x, y, x_sep)
+        if typeof(tree[1])::String  && length(tree) == 1
+            # we have a terminal in our tree, we should simply return
+            # the x and y we have with half of the node sep 
+            # on the left_x_extents and half on the right 
+            # NOTE :the condition for this probably needs to be 
+            # changed, maybe this causes issues 
+            # for handling singleton daughters
+            disp = round(node_width/2)
+            return TreePoint(x, y, x - disp, x + disp)
         else
-            non_term_location = Point(x, y)
-            non_term_line_attach = Point(x, y + (layer_sep / 5))
-            text(tree[1], non_term_location, halign=:center, valign=:middle)
+            # we have some number of daughters 
             daughters = tree[2:end]
-            xs = zeros(length(daughters))
-            ys = repeat([y + layer_sep], length(daughters))
             if iseven(length(daughters))
                 left_center_i = Integer(floor(length(daughters) / 2))
                 prev_x = x - Integer(round(layer_sep / 2))
@@ -166,16 +190,16 @@ function tree_img(outer_tree::Array, filename::String)
                     prev_x = new_x
                 end
             end
-            x_sep = x_sep ^ .9
+            x_sep = x_sep ^ .9999
             for daughter_i = 1:length(daughters)
                 daughter = daughters[daughter_i]
                 daughter_line_attach = Point(Integer(round(xs[daughter_i])), Integer(round(ys[daughter_i] - (layer_sep / 5))))
                 line(non_term_line_attach, daughter_line_attach, :stroke)
-                place_point(daughter, xs[daughter_i], ys[daughter_i], x_sep)
+                naive_place_point(daughter, xs[daughter_i], ys[daughter_i], x_sep)
             end
         end
         
     end
-    place_point(outer_tree, begin_x, begin_y, daughter_sep)
+    naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
     finish()
 end
