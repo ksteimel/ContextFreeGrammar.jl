@@ -36,11 +36,12 @@ function get_bracketed_string(tree)
     end
 end
 mutable struct TreePoint
-    center_x::Int16
-    center_y::Int16
-    left_extent_x::Int16
-    right_extent_x::Int16
+    center_x::Float32
+    center_y::Float32
+    left_extent_x::Float32
+    right_extent_x::Float32
 end
+NestedTreePoints = Union{TreePoint, Array{TreePoint}}
 """
 Overload equality for TreePoint
 """
@@ -76,7 +77,7 @@ x_displacement<:Numeric
     The value to shift the tree. Positive shifts the
     tree right, negative left.
 """
-function shift_tree(tree::Array, x_displacement<:Numeric)
+function shift_tree(tree::Array, x_displacement::Int)
     shift_point(tree[1], x_displacement)
     if length(tree) > 1
         for daughter in tree[2]
@@ -141,27 +142,30 @@ Lastly, a Luxor canvas is prepared with the extents of the top node (plus a marg
 set from top to bottom.
 """
 function tree_img(outer_tree::Array, filename::String)
-    daughter_sep = 150 # this decays as we recursively build the tree
+    daughter_sep = 60 # this decays as we recursively build the tree
     layer_sep = 50 # this remains constant throughout the drawing
-    begin_x = floor(width/6) 
+    begin_x =150
     begin_y = 20
     node_width = 40
     function naive_place_point(tree, x, y, x_sep)
-        if typeof(tree[1])::String  && length(tree) == 1
+        println("X:" * string(x))
+        println("Y:" * string(y))
+        if typeof(tree) == String  || length(tree) == 1
             # we have a terminal in our tree, we should simply return
             # the x and y we have with half of the node sep 
             # on the left_x_extents and half on the right 
-            # NOTE :the condition for this probably needs to be 
-            # changed, maybe this causes issues 
-            # for handling singleton daughters
             disp = round(node_width/2)
             return TreePoint(x, y, x - disp, x + disp)
         else
             # we have some number of daughters 
+            # the array of daughters is stored in position
             daughters = tree[2:end]
+            xs = zeros(length(daughters))
+            ys = repeat([y + layer_sep], length(daughters))
+            println(length(daughters))
             if iseven(length(daughters))
                 left_center_i = Integer(floor(length(daughters) / 2))
-                prev_x = x - Integer(round(layer_sep / 2))
+                prev_x = x - Integer(round(x_sep / 2))
                 xs[left_center_i] = prev_x
                 for daughter_i = (left_center_i - 1):-1:1
                     new_x = prev_x - x_sep
@@ -191,15 +195,44 @@ function tree_img(outer_tree::Array, filename::String)
                 end
             end
             x_sep = x_sep ^ .9999
+            daughters_point_array = []
             for daughter_i = 1:length(daughters)
                 daughter = daughters[daughter_i]
-                daughter_line_attach = Point(Integer(round(xs[daughter_i])), Integer(round(ys[daughter_i] - (layer_sep / 5))))
-                line(non_term_line_attach, daughter_line_attach, :stroke)
-                naive_place_point(daughter, xs[daughter_i], ys[daughter_i], x_sep)
+                res = naive_place_point(daughter, xs[daughter_i], ys[daughter_i], x_sep)
+                push!(daughters_point_array, res)
+            end
+            # gather information about the left extent of the left daughter and the 
+            # right extent of the right daughter
+            leftmost_daughter_left_x = 0
+            rightmost_daughter_right_x = 0
+            if typeof(daughters_point_array[1]) <: Array
+                leftmost_daughter_left_x = daughters_point_array[1][1].left_extent_x
+            else
+                leftmost_daughter_left_x = daughters_point_array[1].left_extent_x
+            end
+            if typeof(daughters_point_array[end]) <: Array
+                rightmost_daughter_right_x = daughters_point_array[end][1].right_extent_x
+            else
+                rightmost_daughter_right_x = daughters_point_array[end].right_extent_x
+            end
+            return [TreePoint(x, y, leftmost_daughter_left_x, rightmost_daughter_right_x), daughters_point_array]
+        end
+    end
+    """
+    This function fixes overlaps in the x direction
+    """
+    function fix_overlaps(tree, points_tree)
+        # base case is that we are at the bottom of the tree
+        if typeof(tree) == String || length(tree) == 1
+            return
+        else
+            # we have some sort of non-terminal
+            daughters = tree[2:end]
+            daughter_points = points_tree[2:end]
+            for daughter_i in 1:length(daughters)
+                pass
             end
         end
-        
     end
-    naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
-    finish()
+    points_tree = naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
 end
