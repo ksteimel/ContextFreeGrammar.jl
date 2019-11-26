@@ -77,7 +77,7 @@ x_displacement<:Numeric
     The value to shift the tree. Positive shifts the
     tree right, negative left.
 """
-function shift_tree(tree::Array, x_displacement::Int)
+function shift_tree(tree::Array, x_displacement::T) where T<:Number
     shift_point(tree[1], x_displacement)
     if length(tree) > 1
         for daughter in tree[2]
@@ -222,6 +222,7 @@ function tree_img(outer_tree::Array, filename::String)
     This function fixes overlaps in the x direction
     """
     function fix_overlaps(tree, points_tree)
+        horizontal_gap = 20
         # base case is that we are at the bottom of the tree
         if typeof(tree) == String || length(tree) == 1
             return
@@ -229,9 +230,22 @@ function tree_img(outer_tree::Array, filename::String)
             # we have some sort of non-terminal
             daughters = tree[2:end]
             daughter_points = points_tree[2:end]
+            # correct nodes further down in the tree
+            previous_right_edge = 0
             for daughter_i in 1:length(daughters)
-                pass
+                fix_overlaps(daughters[daughter_i], daughter_points[daughter_i])
+                # now correct the current level in the tree and return
+                daughter_left_edge = daughter_points[daughte_i].left_extent_x
+                if previous_right_edge > daughter_left_edge
+                    # we need to move daughter points over
+                    shift_distance = horizontal_gap + (previous_right_edge - daughter_left_edge)
+                    shift_tree(daughter_points[daughter_i], shift_distance)
+                    previous_right_edge = daughter_points[daughter_i].right_extent_x
+                end
+                # modify the current root node's left and right extents
+                
             end
+            
         end
     end
     points_tree = naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
