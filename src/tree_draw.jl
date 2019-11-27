@@ -137,6 +137,23 @@ function write_tree_graphic(syntactic_tree::Array, points_tree::Array, filename:
     fontface("Georgia-Bold")
     fontsize(12)
     # recursive place point call
+    function place_point_in_canvas(points_tree, syntactic_tree)
+        if typeof(syntactic_tree) <: Array && length(tree) == 1
+            term_location = Point(points_tree[1].center_x, points_tree[1].center_y)
+            text(tree[1], term_location, halign=:center, valign=:middle)
+        else
+            non_term_location = Point(points_tree[1].center_x, points_tree[1].center_y)
+            non_term_line_attach = Point(points_tree[1].center_x, points_tree[1].center_y + 10)
+            text(tree[1], non_term_location, halign=:center, valign=:middle)
+            daughters = tree[2:end]
+            for daughter_i = 2:length(tree)
+                daughter_line_attach = Point(points_tree[daughter_i].center_x, points_tree[daughter_i].center_y - 10)
+                line(non_term_line_attach, daughter_line_attach)
+                place_point_in_canvas(tree[daughter_i], points_tree[daughter_i])
+            end
+        end
+    end
+    finish()
 end
 """
 Writes a tree graphic at the filepath specified.
@@ -273,4 +290,5 @@ function tree_img(outer_tree::Array, filename::String)
     end
     points_tree = naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
     fix_overlaps(outer_tree, points_tree)
+    write_tree_graphic(outer_tree, points_tree, filename)
 end
