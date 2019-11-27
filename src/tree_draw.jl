@@ -14,7 +14,30 @@ function find_extents(tree::Array, daughter_sep, layer_sep)
     total_depth += layer_sep
     return total_width, total_depth
 end
-
+"""
+This version of `find_extents` works with raw points trees,
+finding the width is easy, finding the depth requires some traversal.
+"""
+function find_extents(points_tree::NestedTreePoints)
+    top_y = points_tree[1].center_y
+    left_x = points_tree[1].leftmost_daughter_left_x
+    right_x = points_tree[1].rightmost_daughter_right_x
+    bottom_y = top_y
+    function find_bottom_y(tree)
+        y = tree[1].center_y
+        for daughter in tree[2:end]
+            daughter_y = find_bottom_y(daughter)
+            if daughter_y > y
+                y = daughter_y
+            end
+        end
+        return y
+    end
+    bottom_y = find_bottom_y(points_tree)
+    total_width = right_x - left_x
+    total_depth = bottom_y - top_y
+    return total_width, total_depth
+end
 """
 Get the bracketed notation for the provided tree. 
 
@@ -113,7 +136,6 @@ function write_tree_graphic(syntactic_tree::Array, points_tree::Array, filename:
     origin(start)
     fontface("Georgia-Bold")
     fontsize(12)
-    layer_thickness = 14
     # recursive place point call
 end
 """
@@ -232,21 +254,23 @@ function tree_img(outer_tree::Array, filename::String)
             daughter_points = points_tree[2:end]
             # correct nodes further down in the tree
             previous_right_edge = 0
-            for daughter_i in 1:length(daughters)
-                fix_overlaps(daughters[daughter_i], daughter_points[daughter_i])
+            for daughter_i in 2:length(tree)
+                fix_overlaps(tree[daughter_i], points_tree[daughter_i])
                 # now correct the current level in the tree and return
-                daughter_left_edge = daughter_points[daughte_i].left_extent_x
+                daughter_left_edge = points_tree[daughte_i].left_extent_x
                 if previous_right_edge > daughter_left_edge
                     # we need to move daughter points over
                     shift_distance = horizontal_gap + (previous_right_edge - daughter_left_edge)
-                    shift_tree(daughter_points[daughter_i], shift_distance)
-                    previous_right_edge = daughter_points[daughter_i].right_extent_x
+                    shift_tree(points_tree[daughter_i], shift_distance)
+                    previous_right_edge = points_tree[daughter_i].right_extent_x
                 end
-                # modify the current root node's left and right extents
                 
             end
-            
+            # modify the current root node's left and right extents
+            points_tree[1].left_extent_x = points_tree[2].left_extent_x
+            points_tree[1].right_extent_x = points_tree[end].right_extent_x
         end
     end
     points_tree = naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
+    fix_overlaps(outer_tree, points_tree)
 end
