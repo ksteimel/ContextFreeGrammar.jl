@@ -1,3 +1,37 @@
+mutable struct TreePoint
+    center_x::Float32
+    center_y::Float32
+    left_extent_x::Float32
+    right_extent_x::Float32
+end
+NestedTreePoints = Union{TreePoint, Array{TreePoint}}
+"""
+Overload equality for TreePoint
+"""
+function Base.:(==)(a::TreePoint, b::TreePoint)
+    if a.center_x == b.center_x &&
+        a.center_y == b.center_y &&
+        a.left_extent_x == b.left_extent_x &&
+        a.right_extent_x == b.right_extent_x 
+        return true
+    else
+        return false
+    end
+end
+#function Base.show(io::IO, points::NestedTreePoints)
+#    function print_tier(points::NestedTreePoints, indent_level::Int)
+#        if length(points) == 1
+#            println(io, "\t" ^ indent_level * String(points))
+#        else
+#            for daughter in points
+#                print_tier(daughter, indent_level + 1)
+#            end
+#        end
+#    end
+#end
+function TreePoint(;Fcenter_x, center_y, left_extent_x, right_extent_x)
+    TreePoint(center_x, center_y, left_extent_x, right_extent_x)
+end
 """
 Determines what the width of a tree drawing should be
 Currently, this needs some work as the size of daughter-sep is
@@ -58,29 +92,6 @@ function get_bracketed_string(tree)
         return str_res * "]"
     end
 end
-mutable struct TreePoint
-    center_x::Float32
-    center_y::Float32
-    left_extent_x::Float32
-    right_extent_x::Float32
-end
-NestedTreePoints = Union{TreePoint, Array{TreePoint}}
-"""
-Overload equality for TreePoint
-"""
-function Base.:(==)(a::TreePoint, b::TreePoint)
-    if a.center_x == b.center_x &&
-        a.center_y == b.center_y &&
-        a.left_extent_x == b.left_extent_x &&
-        a.right_extent_x == b.right_extent_x 
-        return true
-    else
-        return false
-    end
-end
-function TreePoint(;center_x, center_y, left_extent_x, right_extent_x)
-    TreePoint(center_x, center_y, left_extent_x, right_extent_x)
-end
 function shift_point(tree_point::TreePoint, x_displacement)
     tree_point.center_x += x_displacement
     tree_point.left_extent_x += x_displacement
@@ -112,6 +123,13 @@ function shift_tree(tree::Array, x_displacement::T) where T<:Number
         end
     end
 end
+function verify_points_tree(tree)
+    if typeof(tree[1]) == TreePoint
+        return true
+    else
+        return false
+    end
+end
 function naive_point_locate(outer_tree::Array)
     
 end
@@ -121,14 +139,14 @@ all overlap and bounding box issues have been addressed.
 
 Params:
 --------
-syntactic_tree::Array
+syntactic_tree::Array                            
     This is the original syntactic tree that is going to be plotted.
 points_tree::Array
     This is the tree of coordinate point information that has
     been built up and modified through other functions
 """
 function write_tree_graphic(syntactic_tree::Array, points_tree::Array, filename::String)
-    width, depth = find_extents(outer_tree, daughter_sep, layer_sep)
+    width, depth = find_extents(syntactic_tree, daughter_sep, layer_sep)
     Drawing(width, depth, filename)
     background("white")
     sethue("black")
@@ -137,7 +155,7 @@ function write_tree_graphic(syntactic_tree::Array, points_tree::Array, filename:
     fontface("Georgia-Bold")
     fontsize(12)
     # recursive place point call
-    function place_point_in_canvas(points_tree, syntactic_tree)
+    function place_point_in_canvas(syntactic_tree, points_tree)
         if typeof(syntactic_tree) <: Array && length(tree) == 1
             term_location = Point(points_tree[1].center_x, points_tree[1].center_y)
             text(tree[1], term_location, halign=:center, valign=:middle)
@@ -201,7 +219,6 @@ function tree_img(outer_tree::Array, filename::String)
             daughters = tree[2:end]
             xs = zeros(length(daughters))
             ys = repeat([y + layer_sep], length(daughters))
-            println(length(daughters))
             if iseven(length(daughters))
                 left_center_i = Integer(floor(length(daughters) / 2))
                 prev_x = x - Integer(round(x_sep / 2))
@@ -254,7 +271,14 @@ function tree_img(outer_tree::Array, filename::String)
             else
                 rightmost_daughter_right_x = daughters_point_array[end].right_extent_x
             end
-            return [TreePoint(x, y, leftmost_daughter_left_x, rightmost_daughter_right_x), daughters_point_array]
+            if !verify_points_tree([TreePoint(x, y, leftmost_daughter_left_x, rightmost_daughter_right_x), daughters_point_array])
+                println("UNable to verify")
+                println(length(daughters))
+                println([(x, y, leftmost_daughter_left_x, rightmost_daughter_right_x), daughters_point_array])
+            else
+                println("Successfully verified")
+            end
+            return vcat([TreePoint(x, y, leftmost_daughter_left_x, rightmost_daughter_right_x)], daughters_point_array)
         end
     end
     """
@@ -266,15 +290,30 @@ function tree_img(outer_tree::Array, filename::String)
         if typeof(tree) == String || length(tree) == 1
             return
         else
+            println("HYYYY")
+            if typeof(points_tree) == TreePoint
+                println(tree)
+                println(points_tree)
+            end
+            if length(tree) != length(points_tree)
+                println(tree)
+                println(points_tree)
+            end
             # we have some sort of non-terminal
             daughters = tree[2:end]
             daughter_points = points_tree[2:end]
             # correct nodes further down in the tree
             previous_right_edge = 0
             for daughter_i in 2:length(tree)
+                println(points_tree[daughter_i])
                 fix_overlaps(tree[daughter_i], points_tree[daughter_i])
                 # now correct the current level in the tree and return
-                daughter_left_edge = points_tree[daughte_i].left_extent_x
+                daughter_left_edge = 0
+                if typeof(points_tree[daughter_i])  == TreePoint
+                    daughter_left_edge = points_tree[daughter_i].left_extent_x
+                else
+                    daughter_left_edge = points_tree[daughter_i][1].left_extent_x
+                end
                 if previous_right_edge > daughter_left_edge
                     # we need to move daughter points over
                     shift_distance = horizontal_gap + (previous_right_edge - daughter_left_edge)
@@ -283,9 +322,21 @@ function tree_img(outer_tree::Array, filename::String)
                 end
                 
             end
+            new_left = points_tree[1].left_extent_x 
+            new_right = points_tree[1].right_extent_x
+            if typeof(points_tree[2]) == TreePoint
+                new_left = points_tree[2].left_extent_x 
+            else
+                new_left = points_tree[2][1].left_extent_x
+            end
+            if typeof(points_tree[end]) == TreePoint
+                new_right = points_tree[end].left_extent_x
+            else
+                new_right = points_tree[end][1].left_extent_x
+            end
             # modify the current root node's left and right extents
-            points_tree[1].left_extent_x = points_tree[2].left_extent_x
-            points_tree[1].right_extent_x = points_tree[end].right_extent_x
+            points_tree[1].left_extent_x = new_left
+            points_tree[1].right_extent_x = new_right
         end
     end
     points_tree = naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
