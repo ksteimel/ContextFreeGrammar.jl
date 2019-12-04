@@ -81,7 +81,7 @@ function find_extents(points_tree::Array)
     bottom_y, right_x = find_bottom_y(points_tree)
     total_width = right_x #- left_x
     total_depth = bottom_y #- top_y
-    return round(1.5 * total_width), round(1.5 * total_depth)
+    return round(1.8 * total_width), round(1.5 * total_depth)
 end
 """
 Get the bracketed notation for the provided tree. 
