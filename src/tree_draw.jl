@@ -79,8 +79,8 @@ function find_extents(points_tree::Array)
         return y, right
     end
     bottom_y, right_x = find_bottom_y(points_tree)
-    total_width = right_x - left_x
-    total_depth = bottom_y - top_y
+    total_width = right_x #- left_x
+    total_depth = bottom_y #- top_y
     return round(1.5 * total_width), round(1.5 * total_depth)
 end
 """
