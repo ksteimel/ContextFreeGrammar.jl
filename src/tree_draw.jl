@@ -59,23 +59,29 @@ function find_extents(points_tree::Array)
     bottom_y = top_y
     function find_bottom_y(tree)
         y = 0
+        right = 0
         if typeof(tree) == TreePoint
             y = tree.center_y
+            right = tree.right_extent_x
         else
             y = tree[1].center_y
+            right = tree[1].right_extent_x
             for daughter in tree[2:end]
-                daughter_y = find_bottom_y(daughter)
+                daughter_y, daughter_right = find_bottom_y(daughter)
                 if daughter_y > y
                     y = daughter_y
                 end
+                if daughter_right > right
+                    right = daughter_right
+                end
             end
         end
-        return y
+        return y, right
     end
-    bottom_y = find_bottom_y(points_tree)
+    bottom_y, right_x = find_bottom_y(points_tree)
     total_width = right_x - left_x
     total_depth = bottom_y - top_y
-    return 4*round(total_width), 2*round(total_depth)
+    return round(1.5 * total_width), round(1.5 * total_depth)
 end
 """
 Get the bracketed notation for the provided tree. 
@@ -202,8 +208,8 @@ end
 function center_tree(points_tree)
     if points_tree[1].left_extent_x < 0
         shift_tree(points_tree, points_tree[1].left_extent_x * - 1)
-    elseif points_tree[1].left_extent_x > 10
-        shift_tree(points_tree, 10 - points_tree[1].left_extent_x)
+    elseif points_tree[1].left_extent_x > 0
+        shift_tree(points_tree, 0 - points_tree[1].left_extent_x)
     end
 end
 """
@@ -309,7 +315,7 @@ function tree_img(outer_tree::Array, filename::String)
                 rightmost_daughter_right_x = daughters_point_array[end].right_extent_x
             end
             if !verify_points_tree([TreePoint(x, y, leftmost_daughter_left_x, rightmost_daughter_right_x), daughters_point_array])
-                println("UNable to verify")
+                println("Unable to verify")
             end
             return vcat([TreePoint(x, y, leftmost_daughter_left_x, rightmost_daughter_right_x)], daughters_point_array)
         end
@@ -366,9 +372,7 @@ function tree_img(outer_tree::Array, filename::String)
         end
     end
     points_tree = naive_place_point(outer_tree, begin_x, begin_y, daughter_sep)
-    println(points_tree)
     fix_overlaps(outer_tree, points_tree)
-    println(points_tree)
     center_tree(points_tree)
     write_tree_graphic(outer_tree, points_tree, filename)
 end
