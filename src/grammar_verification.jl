@@ -30,7 +30,7 @@ This works essentially the same as `verify_productions`
 except that this one returns the array of mismatched pieces
 not just a boolean value.
 """
-function identify_missing_left_hand_sides(productions, lexicon)::Bool
+function identify_missing_left_hand_sides(productions, lexicon)::Array
     prod_items = collect(Iterators.flatten(values(productions)))
     prod_items = unique(prod_items)
     lex_items = collect(Iterators.flatten(values(lexicon)))
