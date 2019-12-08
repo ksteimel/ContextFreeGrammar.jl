@@ -50,7 +50,25 @@ end
     @test CFG.verify_lexicon(lexicon, sent) == false
     # testing with phrases because that seems to cause an error 
     productions = Dict("S" => [["NP", "VP"]], "NP" => [["D","N"]], "VP" => [["V", "NP"]])
+    @testset "single_level_recursion" begin
+        """
+        This was a test that was causing errors for one of Hai's students
+        """
+        rules = """
+                Noun: {dog, cat}
+                Det: {the}
+                NP -> Det Noun
+                S -> NP VP
 
+                Aux.prog: {is, been, be}
+                V.trans.ing: {seeing}
+                VP.ing -> Aux.prog V.trans.ing
+                VP -> VP.ing (NP)
+                VP -> VP.ing NP VP
+                """
+        productions, lexicon = CFG.read_rules(rules)
+        @test CFG.verify_productions(productions, lexicon) == true
+    end
 end
 
 @testset "earley_pieces" begin
