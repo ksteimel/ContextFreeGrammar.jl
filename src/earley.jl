@@ -142,7 +142,13 @@ function completer!(charts, i, productions::Dict, lexicon::Dict, state::EarleySt
                     new_state = EarleyState(next_state_num, old_state.start_index, 
                                             i, old_state.right_hand, old_state.left_hand,
                                             old_state.dot_index + 1, backpointers)
-                    push!(charts[i], new_state)
+                    # if the left side and the right side of our rule are the same, don't add a new state
+                    # this prevents infinite loops when you have VP -> VP rules.
+                    if length(new_state.right_hand) == 1 && new_state.left_hand == new_state.right_hand[1]
+                        continue
+                    else
+                        push!(charts[i], new_state)
+                    end
                     next_state_num += 1
                 end
             end
