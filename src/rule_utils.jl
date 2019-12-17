@@ -103,18 +103,20 @@ function read_rules(rule_text)
             if length(pieces) != 2
                 error("Mutiple -> symbols in input string")
             end
-            left_hand = strip(pieces[1])
-            right_hand = strip(pieces[2])
-            components = split(right_hand)
-            components = [string(component) for component in components]
-            # run the components through gen_opt_poss to get all possible
-            # permutations of the rule with optional components
-            # If nothing is optional, the result will be components
-            partial_powerset = gen_opt_poss(components)
-            if left_hand in keys(productions)
-                append!(productions[left_hand], partial_powerset)
-            else
-                productions[left_hand] = partial_powerset
+            for right_chunk in split(pieces[2], "|")
+                left_hand = strip(pieces[1])
+                right_chunk = strip(right_chunk)
+                components = split(right_chunk)
+                components = [string(component) for component in components]
+                # run the components through gen_opt_poss to get all possible
+                # permutations of the rule with optional components
+                # If nothing is optional, the result will be components
+                partial_powerset = gen_opt_poss(components)
+                if left_hand in keys(productions)
+                    append!(productions[left_hand], partial_powerset)
+                else
+                    productions[left_hand] = partial_powerset
+                end
             end
         else
             println(line)

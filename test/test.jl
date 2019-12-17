@@ -34,6 +34,12 @@ include("../src/CFG.jl")
     productions, lexicon = CFG.read_rules(ambiguous_production)
     res_productions = Dict("NP" => [["D","N"], ["Adj","N"]])
     @test productions == res_productions
+    @testset "syntactic_optionality" begin 
+        rule_w_syntactic_options = """NP -> Q N | D N"""
+        productions, lexicon = CFG.read_rules(rule_w_syntactic_options)
+        res_productions = Dict("NP" => [["Q", "N"], ["D", "N"]])
+        @test productions == res_productions
+    end
 end
 
 @testset "rule_verify" begin
