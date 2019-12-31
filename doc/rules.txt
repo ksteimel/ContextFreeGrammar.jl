@@ -1,0 +1,76 @@
+# this can handle 3rd person singular subjects, auxiliary verbs
+S -> NP VP_pst
+S -> NP_pl VP_pst
+S -> NP_nom VP_aux
+S -> NP_nom_sg VP_aux_3s
+S -> NP VP_aux
+S -> NP_nom VP_pst
+
+NP -> D (Adj) N (PP)
+NP_pl -> (D) (Adj) N_pl (PP)
+N_pl : {dogs, cats, people, fish}
+VP -> V 
+VP -> V_tr NP
+VP -> V_tr NP_obj
+VP -> V_dt NP_obj NP_obj
+VP -> V_dt NP NP
+VP -> V_dt NP_obj NP
+VP -> V_dt NP NP_obj
+
+VP_pst -> V_pst
+VP_pst -> V_tr_pst NP
+VP_pst -> V_tr_pst NP_obj
+VP_pst -> V_dt_pst NP_obj NP_obj
+VP_pst -> V_dt_pst NP NP
+VP_pst -> V_dt_pst NP_obj NP
+VP_pst -> V_dt_pst NP NP_obj
+# past participles
+VP_pst_part -> V_pst_part
+VP_pst_part -> V_tr_pst_part NP
+VP_pst_part -> V_tr_pst_part NP_obj
+VP_pst_part -> V_dt_pst_part NP_obj NP_obj
+VP_pst_part -> V_dt_pst_part NP NP
+VP_pst_part -> V_dt_pst_part NP_obj NP
+VP_pst_part -> V_dt_pst_part NP NP_obj
+#handling progressive participles
+VP_prog_part -> V_prog_part
+VP_prog_part -> V_tr_prog_part NP
+VP_prog_part -> V_tr_prog_part NP_obj
+VP_prog_part -> V_dt_prog_part NP_obj NP_obj
+VP_prog_part -> V_dt_prog_part NP NP
+VP_prog_part -> V_dt_prog_part NP_obj NP
+VP_prog_part -> V_dt_prog_part NP NP_obj
+VP_aux -> Aux_perf VP_pst_part
+VP_aux -> Aux_perf VP_aux_prog
+VP_aux_prog -> Aux_prog_pred VP_pst_part
+
+# 3rd person singular versions
+VP_aux_3s -> Aux_perf_3s VP_pst_part
+VP_aux_3s -> Aux_perf_3s VP_aux_prog
+
+# prepositional phrases
+PP -> P NP
+P : {by, in, on, with, near, for}
+N : {dog, cat, people, fish, processer}
+D : the
+V : run
+V_tr : {win, eat, purchase, pay}
+V_dt : {give}
+Aux_perf : {have}
+Aux_perf_3s : {has}
+Aux_prog : {is}
+Aux_prog_pred : {been}
+V_pst : ran
+V_tr_pst : {won, ate, purchased, paid}
+V_dt_pst : {gave}
+V_prog_part: running
+V_tr_prog_part: {winning, eating, purchasing, paying}
+V_dt_prog_part: {giving}
+V_pst_part : ran
+V_tr_pst_part : {won, eaten, purchased, paid}
+V_dt_pst_part : {given}
+Adj: {green, fast, decent, magical, blue, stellar, deplorable, wonderful, educated}
+#This is a comment
+NP_nom : {they, we, you}
+NP_nom_sg : {he, she, it, you}
+NP_obj : {him, her, them, us, you, it}
