@@ -235,7 +235,6 @@ end
                         "PP" => [["P", "NP"]])
     lexicon = Dict("I" => ["N"], "bought" => ["V"], "fireworks" => ["N"], "in" => ["P"], "Pennsylvania" => ["N"])
     chart = CFG.parse_earley(productions, lexicon, sentence2, debug=false)
-    #println(chart[1])
     trees = CFG.chart_to_tree(chart, sentence2)
     target_tree = ["S", ["NP", ["N", ["I"]]], 
                     ["VP", ["V", ["bought"]], 
@@ -251,7 +250,6 @@ end
                         "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                         "PP" => [["P", "NP"]])
     chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
-    #println(chart)
     trees = CFG.chart_to_tree(chart, sentence)
     target_tree =  ["S", 
                         ["NP", 
@@ -281,7 +279,6 @@ end
                             "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                             "PP" => [["P", "NP"]])
         chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
-        #println(chart)
         trees = CFG.chart_to_tree(chart, sentence)
         target_tree =  ["S", 
                             ["NP", 
@@ -475,19 +472,3 @@ end
     CFG.tree_img(z, "testfile.png")
     @test filesize("testfile.png") > 0
 end
-#println()
-#tokens = ["the","dog","runs","quite","fast"]
-#non_terminals = ["NP","VP","Av","Aj","D","N", "V", "AP", "S"]
-#lattice = zeros(Bool, 5, 5, length(non_terminals))
-#lattice[1,1,5] = true
-#lattice[1,2,6] = true
-#lattice[1,3,7] = true
-#lattice[1,4,3] = true
-#lattice[1,5,4] = true
-#lattice[2,1,1] = true
-#lattice[2,4,8] = true
-#lattice[5,1,9] = true
-#lattice[3,3,2] = true
-
-#CFG.print_lattice(lattice, non_terminals, tokens)
-#
