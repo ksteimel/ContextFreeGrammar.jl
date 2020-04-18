@@ -118,7 +118,6 @@ function gen_opt_poss(rhs_pieces::Array)
     poss = []
     for i=0:(top_end - 1)
         pres_mask = digits(i, base=2, pad=n_opts)
-        println(pres_mask)
         push!(poss, interleave_opts(rhs_pieces, opt_mask, pres_mask))
     end
     return poss

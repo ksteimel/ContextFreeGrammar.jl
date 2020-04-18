@@ -51,7 +51,6 @@ Checks to see if all the words in the sentence exist in the lexicon
 function verify_lexicon(lexicon, sentence)::Bool
     for word in sentence
         if !haskey(lexicon, word)
-            println(word)
             return false
         end
     end

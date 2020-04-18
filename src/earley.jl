@@ -268,7 +268,6 @@ function build_backtrace_array(state::EarleyState, state_stack::Array, ; offset=
         right_piece = Any[state.left_hand]
         for pointer in state.originating_states
             push!(right_piece, build_backtrace_array(state_stack[pointer], state_stack, offset=offset*"--"))
-            println(offset * string(right_piece))
         end
         return right_piece
     end
@@ -288,7 +287,6 @@ function chart_to_tree(charts, sentence)
     for state_i = length(states):-1:1
         state = states[state_i]
         if state.left_hand == "S" && is_spanning(state, length(sentence))
-            println()
             traces = build_backtrace_array(state, states)
             push!(trees, traces)
         end
