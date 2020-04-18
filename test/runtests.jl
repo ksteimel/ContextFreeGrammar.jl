@@ -1,12 +1,12 @@
 using Test
 using AbstractTrees
-include("../src/CFG.jl")
+using ContextFreeGrammar
 @testset "rule_reading" begin
 	simple_rules = """
 			NP -> D N
 			D : dog
 			"""
-	productions, lexicon = CFG.read_rules(simple_rules)
+	productions, lexicon = read_rules(simple_rules)
 	res_productions = Dict("NP" => [["D", "N"]])
 	res_lexicon = Dict("dog" => ["D"])
 	@test res_productions == productions
@@ -15,7 +15,7 @@ include("../src/CFG.jl")
 				NP -> Q N
 				D : {dog, cat, mouse}
 				"""
-	productions, lexicon = CFG.read_rules(multi_part_lexicon)
+	productions, lexicon = read_rules(multi_part_lexicon)
 	res_productions = Dict("NP" => [["Q", "N"]])
 	res_lexicon = Dict("dog" => ["D"], "cat" => ["D"], "mouse" => ["D"])
 	@test res_lexicon == lexicon
@@ -25,18 +25,18 @@ include("../src/CFG.jl")
 				V : dog
 				"""
 	res_lexicon = Dict("dog" => ["D","V"])
-	productions, lexicon = CFG.read_rules(ambiguous_lexicon)
+	productions, lexicon = read_rules(ambiguous_lexicon)
 	@test lexicon == res_lexicon
 	ambiguous_production = """
                             NP -> D N
                             NP -> Adj N
                             """
-    productions, lexicon = CFG.read_rules(ambiguous_production)
+    productions, lexicon = read_rules(ambiguous_production)
     res_productions = Dict("NP" => [["D","N"], ["Adj","N"]])
     @test productions == res_productions
     @testset "syntactic_optionality" begin 
         rule_w_syntactic_options = """NP -> Q N | D N"""
-        productions, lexicon = CFG.read_rules(rule_w_syntactic_options)
+        productions, lexicon = read_rules(rule_w_syntactic_options)
         res_productions = Dict("NP" => [["Q", "N"], ["D", "N"]])
         @test productions == res_productions
     end
@@ -46,14 +46,14 @@ end
     productions = Dict("NP" => [["D","N"]], "VP" => [["V", "NP"]])
     lexicon = Dict("dog" => ["N", "V"], "the" => ["D"])
     sent = ["the", "dog"]
-    @test CFG.verify_productions(productions, lexicon) == true
+    @test verify_productions(productions, lexicon) == true
     productions = Dict("NP" => [["D","N"]], "VP" => [["V", "NP"]])
     lexicon = Dict("dog" => ["N", "V"])
     one_word_sent = ["dog"]
-    @test CFG.verify_productions(productions, lexicon) == false
+    @test verify_productions(productions, lexicon) == false
     lexicon = Dict("dog" => ["N", "D", "V"])
-    @test CFG.verify_lexicon(lexicon, one_word_sent) == true
-    @test CFG.verify_lexicon(lexicon, sent) == false
+    @test verify_lexicon(lexicon, one_word_sent) == true
+    @test verify_lexicon(lexicon, sent) == false
     # testing with phrases because that seems to cause an error 
     productions = Dict("S" => [["NP", "VP"]], "NP" => [["D","N"]], "VP" => [["V", "NP"]])
     @testset "single_level_recursion" begin
@@ -72,8 +72,8 @@ end
                 VP -> VP.ing (NP)
                 VP -> VP.ing NP VP
                 """
-        productions, lexicon = CFG.read_rules(rules)
-        @test CFG.verify_productions(productions, lexicon) == true
+        productions, lexicon = read_rules(rules)
+        @test verify_productions(productions, lexicon) == true
     end
 end
 
@@ -83,7 +83,7 @@ end
     @test sort(parts_of_speech) == sort(unique(collect(Iterators.flatten(values(lexicon)))))
     @testset "EarleyState" begin
         @testset "ordered_constructor" begin
-            sample_state = CFG.EarleyState(1,2,3,["NP","VP"], "S", 1, [3])
+            sample_state = ContextFreeGrammar.EarleyState(1,2,3,["NP","VP"], "S", 1, [3])
             @test sample_state.state_num == 1
             @test sample_state.start_index == 2
             @test sample_state.end_index == 3
@@ -91,50 +91,50 @@ end
             @test sample_state.left_hand == "S"
             @test sample_state.dot_index == 1
             @test sample_state.originating_states == [3]
-            @test !(CFG.is_spanning(sample_state, 4))
-            spanning_state = CFG.EarleyState(1,1,3,["NP", "VP"], "S", 1, [3])
-            @test CFG.is_spanning(spanning_state, 2)
+            @test !(ContextFreeGrammar.is_spanning(sample_state, 4))
+            spanning_state = ContextFreeGrammar.EarleyState(1,1,3,["NP", "VP"], "S", 1, [3])
+            @test ContextFreeGrammar.is_spanning(spanning_state, 2)
         end
         @testset "malformed_construction" begin
-            @test_throws BoundsError CFG.EarleyState(1,2,3,["NP","VP"], "S", 4, [3])
-            @test_throws BoundsError CFG.EarleyState(1,2,3, ["NP","VP"], "S", 0, [3])
-            @test CFG.EarleyState(1,2,3,["NP","VP"], "S", 3, [3]).dot_index == 3
+            @test_throws BoundsError ContextFreeGrammar.EarleyState(1,2,3,["NP","VP"], "S", 4, [3])
+            @test_throws BoundsError ContextFreeGrammar.EarleyState(1,2,3, ["NP","VP"], "S", 0, [3])
+            @test ContextFreeGrammar.EarleyState(1,2,3,["NP","VP"], "S", 3, [3]).dot_index == 3
         end
         @testset "state_utils" begin
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
-            @test CFG.next_cat(initial_state) == "S"
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
-            @test CFG.is_incomplete(initial_state) == true
-            complete_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 2, [])
-            @test CFG.is_incomplete(complete_state) == false
+            initial_state = ContextFreeGrammar.EarleyState(1,1, 1, ["S"], "γ", 1, [])
+            @test ContextFreeGrammar.next_cat(initial_state) == "S"
+            initial_state = ContextFreeGrammar.EarleyState(1,1, 1, ["S"], "γ", 1, [])
+            @test ContextFreeGrammar.is_incomplete(initial_state) == true
+            complete_state = ContextFreeGrammar.EarleyState(1,1, 1, ["S"], "γ", 2, [])
+            @test ContextFreeGrammar.is_incomplete(complete_state) == false
         end
     end
     @testset "predictor" begin
-        chart = CFG.EarleyState[]
-        initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
+        chart = ContextFreeGrammar.EarleyState[]
+        initial_state = ContextFreeGrammar.EarleyState(1,1, 1, ["S"], "γ", 1, [])
         push!(chart, initial_state)
         lexicon = Dict("dog" => ["N","V"], "cat" => ["N","Adj"])
         productions = Dict("S" => [["NP","VP"]], 
                             "NP" => [["N"]],
                             "VP" => [["V"]])
         step_index = 1
-        charts = [chart, CFG.EarleyState[]]
-        CFG.predictor!(charts, step_index, productions, lexicon, initial_state)
+        charts = [chart, ContextFreeGrammar.EarleyState[]]
+        ContextFreeGrammar.predictor!(charts, step_index, productions, lexicon, initial_state)
         @test length(charts[1]) == 2
-        state_res = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, [])
+        state_res = ContextFreeGrammar.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, [])
         @test charts[1][2] == state_res
         ambiguous_productions = Dict("S" => [["CP", "VP"], ["VP"]])
         step_index = 1 
-        chart = CFG.EarleyState[]
+        chart = ContextFreeGrammar.EarleyState[]
         push!(chart, initial_state)
-        charts = [chart, CFG.EarleyState[]]
-        CFG.predictor!(charts, step_index, ambiguous_productions, lexicon, initial_state)
+        charts = [chart, ContextFreeGrammar.EarleyState[]]
+        ContextFreeGrammar.predictor!(charts, step_index, ambiguous_productions, lexicon, initial_state)
         @test length(charts[1]) == 3
     end
     @testset "scanner" begin
         @testset "no_change" begin
-            chart = CFG.EarleyState[]
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
+            chart = ContextFreeGrammar.EarleyState[]
+            initial_state = ContextFreeGrammar.EarleyState(1,1, 1, ["S"], "γ", 1, [])
             push!(chart, initial_state)
             lexicon = Dict("dog" => ["N","V"],
                             "the" => ["D"],
@@ -142,26 +142,26 @@ end
             productions = Dict("S" => [["NP","VP"], ["VP"]],
                                 "NP" => [["D", "N"], ["N"]],
                                 "VP" => [["VP"], ["VP","NP"]])
-            state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, []) # predictor applied
+            state = ContextFreeGrammar.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, []) # predictor applied
             push!(chart, state)
-            state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, []) # predictor applied
+            state = ContextFreeGrammar.EarleyState(3, 1, 1, ["VP"], "S", 1, []) # predictor applied
             push!(chart, state)
-            scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, []) # predictor applied
+            scan_state = ContextFreeGrammar.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, []) # predictor applied
             push!(chart, scan_state)
-            state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, []) # predictor applied
+            state = ContextFreeGrammar.EarleyState(5, 1, 1, ["N"], "NP", 1, []) # predictor applied
             push!(chart, state)
             step_index = 1
-            charts = [chart, CFG.EarleyState[], CFG.EarleyState[]]
+            charts = [chart, ContextFreeGrammar.EarleyState[], ContextFreeGrammar.EarleyState[]]
             @test length(charts) == 3
             @test length(charts[1]) == 5
             sentence = ["the", "dog", "ran"]
-            CFG.scanner!(charts, sentence, step_index, productions, lexicon, state) # this should not change anything
+            ContextFreeGrammar.scanner!(charts, sentence, step_index, productions, lexicon, state) # this should not change anything
             @test length(charts) == 3
             @test length(charts[1]) == 5
         end 
         @testset "scan_applies" begin
-            chart = CFG.EarleyState[]
-            initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [0])
+            chart = ContextFreeGrammar.EarleyState[]
+            initial_state = ContextFreeGrammar.EarleyState(1,1, 1, ["S"], "γ", 1, [0])
             push!(chart, initial_state)
             lexicon = Dict("dog" => ["N","V"],
                             "the" => ["D"],
@@ -169,28 +169,28 @@ end
             productions = Dict("S" => [["NP","VP"], ["VP"]],
                                 "NP" => [["D", "N"], ["N"]],
                                 "VP" => [["VP"], ["VP","NP"]])
-            state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, [])
+            state = ContextFreeGrammar.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, [])
             push!(chart, state)
-            state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, [])
+            state = ContextFreeGrammar.EarleyState(3, 1, 1, ["VP"], "S", 1, [])
             push!(chart, state)
-            scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, [])
+            scan_state = ContextFreeGrammar.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, [])
             push!(chart, scan_state)
-            state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, [])
+            state = ContextFreeGrammar.EarleyState(5, 1, 1, ["N"], "NP", 1, [])
             push!(chart, state)
             step_index = 1
-            charts = [chart, CFG.EarleyState[], CFG.EarleyState[]]
+            charts = [chart, ContextFreeGrammar.EarleyState[], ContextFreeGrammar.EarleyState[]]
             @test length(charts[1]) == 5
             @test length(charts) == 3
             sentence = ["the", "dog", "ran"]
-            CFG.scanner!(charts, sentence, step_index, productions, lexicon, scan_state) # this should not change anything
+            ContextFreeGrammar.scanner!(charts, sentence, step_index, productions, lexicon, scan_state) # this should not change anything
             @test length(charts[2]) == 1
-            target_state = CFG.EarleyState(6, 1, 2, ["the"], "D", 2, []) # come back to that last part
+            target_state = ContextFreeGrammar.EarleyState(6, 1, 2, ["the"], "D", 2, []) # come back to that last part
             @test charts[2][1] == target_state
         end
     end
     @testset "completer" begin
-        chart = CFG.EarleyState[]
-        initial_state = CFG.EarleyState(1,1, 1, ["S"], "γ", 1, [])
+        chart = ContextFreeGrammar.EarleyState[]
+        initial_state = ContextFreeGrammar.EarleyState(1,1, 1, ["S"], "γ", 1, [])
         push!(chart, initial_state)
         lexicon = Dict("dog" => ["N","V"],
                         "the" => ["D"],
@@ -198,20 +198,20 @@ end
         productions = Dict("S" => [["NP","VP"], ["VP"]],
                             "NP" => [["D", "N"], ["N"]],
                             "VP" => [["VP"], ["VP","NP"]])
-        state = CFG.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, []) # predictor applied
+        state = ContextFreeGrammar.EarleyState(2, 1, 1, ["NP","VP"], "S", 1, []) # predictor applied
         push!(chart, state)
-        state = CFG.EarleyState(3, 1, 1, ["VP"], "S", 1, []) # predictor applied
+        state = ContextFreeGrammar.EarleyState(3, 1, 1, ["VP"], "S", 1, []) # predictor applied
         push!(chart, state)
-        scan_state = CFG.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, []) # predictor applied
+        scan_state = ContextFreeGrammar.EarleyState(4, 1, 1, ["D", "N"], "NP", 1, []) # predictor applied
         push!(chart, scan_state)
-        state = CFG.EarleyState(5, 1, 1, ["N"], "NP", 1, []) # predictor applied
+        state = ContextFreeGrammar.EarleyState(5, 1, 1, ["N"], "NP", 1, []) # predictor applied
         push!(chart, state)
-        state = CFG.EarleyState(6, 1, 2, ["N"], "NP", 2, []) # scanner applied
+        state = ContextFreeGrammar.EarleyState(6, 1, 2, ["N"], "NP", 2, []) # scanner applied
         chart2 = [state]
-        charts = [chart, chart2, CFG.EarleyState[]]
+        charts = [chart, chart2, ContextFreeGrammar.EarleyState[]]
         step_index = 2
-        CFG.completer!(charts, step_index, productions, lexicon, state)
-        res_state = CFG.EarleyState(7, 1, 2, ["NP", "VP"], "S", 2, [6])
+        ContextFreeGrammar.completer!(charts, step_index, productions, lexicon, state)
+        res_state = ContextFreeGrammar.EarleyState(7, 1, 2, ["NP", "VP"], "S", 2, [6])
         @test length(charts[2]) == 2
         @test res_state == charts[2][end]
     end
@@ -222,10 +222,10 @@ end
                         "NP" => [["D","N"], ["N"]],
                         "VP" => [["V"], ["V","NP"]])
     lexicon = Dict("the" => ["D"], "dog" => ["N", "V"], "runs" => ["V", "N"])
-    chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
+    chart = parse_earley(productions, lexicon, sentence, debug=false)
     @test length(chart) > 1
-    @test CFG.chart_recognize(chart)
-    trees = CFG.chart_to_tree(chart, sentence)
+    @test chart_recognize(chart)
+    trees = chart_to_tree(chart, sentence)
     @test trees[1] == ["S", ["NP", ["D", ["the"]], ["N", ["dog"]]], ["VP", ["V", ["runs"]]]]
     @test collect(Leaves(trees[1])) == ["S","NP","D", "the","N", "dog","VP", "V", "runs"]
     sentence2 = ["I", "bought", "fireworks", "in", "Pennsylvania"]
@@ -234,8 +234,8 @@ end
                         "VP" => [["V"], ["V", "NP"], ["V", "NP", "PP"]],
                         "PP" => [["P", "NP"]])
     lexicon = Dict("I" => ["N"], "bought" => ["V"], "fireworks" => ["N"], "in" => ["P"], "Pennsylvania" => ["N"])
-    chart = CFG.parse_earley(productions, lexicon, sentence2, debug=false)
-    trees = CFG.chart_to_tree(chart, sentence2)
+    chart = parse_earley(productions, lexicon, sentence2, debug=false)
+    trees = chart_to_tree(chart, sentence2)
     target_tree = ["S", ["NP", ["N", ["I"]]], 
                     ["VP", ["V", ["bought"]], 
                     ["NP", ["N", ["fireworks"]]], 
@@ -249,8 +249,8 @@ end
                         "VP" => [["V"], ["V", "PP"], ["V", "P", "PP"]], 
                         "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                         "PP" => [["P", "NP"]])
-    chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
-    trees = CFG.chart_to_tree(chart, sentence)
+    chart = parse_earley(productions, lexicon, sentence, debug=false)
+    trees = chart_to_tree(chart, sentence)
     target_tree =  ["S", 
                         ["NP", 
                             ["D", ["the"]],
@@ -278,8 +278,8 @@ end
                             "VP" => [["V", "P", "PP"], ["V", "P"],["V","PP"],["V"]], 
                             "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                             "PP" => [["P", "NP"]])
-        chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
-        trees = CFG.chart_to_tree(chart, sentence)
+        chart = parse_earley(productions, lexicon, sentence, debug=false)
+        trees = chart_to_tree(chart, sentence)
         target_tree =  ["S", 
                             ["NP", 
                                 ["D", ["the"]],
@@ -422,20 +422,20 @@ end
                         "compliment" => SubString{String}["V.trans.bare"],
                         "catch" => SubString{String}["V.trans.bare"])
             sentence = ["the", "cat", "has", "been", "looking", "in", "the", "house"]
-            chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
+            chart = parse_earley(productions, lexicon, sentence, debug=false)
             
 	@test target_tree == trees[1]
 	@testset "rule_construction_optional_components" begin
 		# test generation of rules in cases of multiple optionality
 		two_opt_components = ["(D)", "N", "(PP)"]
 		target_rhs = sort([["D", "N"], ["D", "N", "PP"], ["N"], ["N", "PP"]])
-		res_rhs = sort(CFG.gen_opt_poss(two_opt_components))
+		res_rhs = sort(ContextFreeGrammar.gen_opt_poss(two_opt_components))
 		@test res_rhs == target_rhs
 		three_opt_components = ["(D)", "(Adj)", "N", "(PP)"]
 		target_rhs = sort([["D", "Adj", "N", "PP"], ["D", "Adj", "N"],
 				   ["D", "N"], ["D", "N", "PP"], ["N"], ["Adj", "N", "PP"],
 				   ["Adj", "N"], ["N", "PP"]])
-		res_rhs = sort(CFG.gen_opt_poss(three_opt_components))
+		res_rhs = sort(ContextFreeGrammar.gen_opt_poss(three_opt_components))
 		@test res_rhs == target_rhs
 	end
     end
@@ -443,15 +443,15 @@ end
 @testset "drawing_utils" begin
     parse_tree = ["S", ["NP", ["I"]], ["VP", ["V", ["fireworks"]]], ["PP", ["P", ["in"]], ["NP", ["N", ["Pennsylvania"]]]]]
     depth = 4
-    @test CFG.get_depth(parse_tree) == depth
+    @test get_depth(parse_tree) == depth
     @testset "tree_shifting" begin
-        point_tree = [CFG.TreePoint(1,4,0,2), [CFG.TreePoint(0,2,0,0), CFG.TreePoint(1,2,1,2)]]
-        shifted_tree = [CFG.TreePoint(3,4,2,4), [CFG.TreePoint(2,2,2,2), CFG.TreePoint(3,2,3,4)]]
-        CFG.shift_tree(point_tree, 2)
+        point_tree = [ContextFreeGrammar.TreePoint(1,4,0,2), [ContextFreeGrammar.TreePoint(0,2,0,0), ContextFreeGrammar.TreePoint(1,2,1,2)]]
+        shifted_tree = [ContextFreeGrammar.TreePoint(3,4,2,4), [ContextFreeGrammar.TreePoint(2,2,2,2), ContextFreeGrammar.TreePoint(3,2,3,4)]]
+        ContextFreeGrammar.shift_tree(point_tree, 2)
         @test  point_tree == shifted_tree
-        point_tree = [CFG.TreePoint(1,4,0,2), [CFG.TreePoint(0,2,0,0), CFG.TreePoint(1,2,1,2)]]
-        neg_shifted_tree = [CFG.TreePoint(-1,4,-2,0), [CFG.TreePoint(-2,2,-2,-2), CFG.TreePoint(-1,2,-1,0)]]
-        CFG.shift_tree(point_tree, -2)
+        point_tree = [ContextFreeGrammar.TreePoint(1,4,0,2), [ContextFreeGrammar.TreePoint(0,2,0,0), ContextFreeGrammar.TreePoint(1,2,1,2)]]
+        neg_shifted_tree = [ContextFreeGrammar.TreePoint(-1,4,-2,0), [ContextFreeGrammar.TreePoint(-2,2,-2,-2), ContextFreeGrammar.TreePoint(-1,2,-1,0)]]
+        ContextFreeGrammar.shift_tree(point_tree, -2)
         @test point_tree == neg_shifted_tree
     end
 end
@@ -467,8 +467,8 @@ end
                         "NP" => [["D", "N"], ["N"]],
                         "VP" => [["V"], ["V","NP"], ["V", "NP", "PP"]],
                         "PP" => [["D","NP"]])
-    sent = CFG.generate(productions, lexicon)
+    sent = generate(productions, lexicon)
     z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
-    CFG.tree_img(z, "testfile.png")
+    tree_img(z, "testfile.png")
     @test filesize("testfile.png") > 0
 end
