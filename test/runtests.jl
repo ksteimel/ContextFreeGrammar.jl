@@ -183,7 +183,6 @@ end
             @test length(charts) == 3
             sentence = ["the", "dog", "ran"]
             CFG.scanner!(charts, sentence, step_index, productions, lexicon, scan_state) # this should not change anything
-            println("here")
             @test length(charts[2]) == 1
             target_state = CFG.EarleyState(6, 1, 2, ["the"], "D", 2, []) # come back to that last part
             @test charts[2][1] == target_state
@@ -223,7 +222,7 @@ end
                         "NP" => [["D","N"], ["N"]],
                         "VP" => [["V"], ["V","NP"]])
     lexicon = Dict("the" => ["D"], "dog" => ["N", "V"], "runs" => ["V", "N"])
-    chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
+    chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
     @test length(chart) > 1
     @test CFG.chart_recognize(chart)
     trees = CFG.chart_to_tree(chart, sentence)
@@ -235,8 +234,7 @@ end
                         "VP" => [["V"], ["V", "NP"], ["V", "NP", "PP"]],
                         "PP" => [["P", "NP"]])
     lexicon = Dict("I" => ["N"], "bought" => ["V"], "fireworks" => ["N"], "in" => ["P"], "Pennsylvania" => ["N"])
-    println("beginning_cfg")
-    chart = CFG.parse_earley(productions, lexicon, sentence2, debug=true)
+    chart = CFG.parse_earley(productions, lexicon, sentence2, debug=false)
     #println(chart[1])
     trees = CFG.chart_to_tree(chart, sentence2)
     target_tree = ["S", ["NP", ["N", ["I"]]], 
@@ -252,7 +250,7 @@ end
                         "VP" => [["V"], ["V", "PP"], ["V", "P", "PP"]], 
                         "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                         "PP" => [["P", "NP"]])
-    chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
+    chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
     #println(chart)
     trees = CFG.chart_to_tree(chart, sentence)
     target_tree =  ["S", 
@@ -282,7 +280,7 @@ end
                             "VP" => [["V", "P", "PP"], ["V", "P"],["V","PP"],["V"]], 
                             "NP" => [["D", "N"], ["N"], ["Adj", "N"], ["D", "Adj", "N"]], 
                             "PP" => [["P", "NP"]])
-        chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
+        chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
         #println(chart)
         trees = CFG.chart_to_tree(chart, sentence)
         target_tree =  ["S", 
@@ -427,7 +425,7 @@ end
                         "compliment" => SubString{String}["V.trans.bare"],
                         "catch" => SubString{String}["V.trans.bare"])
             sentence = ["the", "cat", "has", "been", "looking", "in", "the", "house"]
-            chart = CFG.parse_earley(productions, lexicon, sentence, debug=true)
+            chart = CFG.parse_earley(productions, lexicon, sentence, debug=false)
             
 	@test target_tree == trees[1]
 	@testset "rule_construction_optional_components" begin
@@ -448,7 +446,6 @@ end
 @testset "drawing_utils" begin
     parse_tree = ["S", ["NP", ["I"]], ["VP", ["V", ["fireworks"]]], ["PP", ["P", ["in"]], ["NP", ["N", ["Pennsylvania"]]]]]
     depth = 4
-    println(CFG.get_depth(parse_tree))
     @test CFG.get_depth(parse_tree) == depth
     @testset "tree_shifting" begin
         point_tree = [CFG.TreePoint(1,4,0,2), [CFG.TreePoint(0,2,0,0), CFG.TreePoint(1,2,1,2)]]
@@ -461,22 +458,23 @@ end
         @test point_tree == neg_shifted_tree
     end
 end
-lexicon = Dict("dog" => ["N","V"],
-                "the" => ["D"],
-                "ran" => ["V"],
-                "by" => ["P"],
-                "my" => ["D"],
-                "house" => ["N"],
-                "houses" => ["N"])
-productions = Dict("S" => [["NP","VP"], ["VP"]],
-                    "NP" => [["D", "N"], ["N"]],
-                    "VP" => [["V"], ["V","NP"], ["V", "NP", "PP"]],
-                    "PP" => [["D","NP"]])
-sent = CFG.generate(productions, lexicon)
-println(sent)
-
-z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
-CFG.tree_img(z, "testfile.png")
+@testset "file_draw" begin
+    lexicon = Dict("dog" => ["N","V"],
+                    "the" => ["D"],
+                    "ran" => ["V"],
+                    "by" => ["P"],
+                    "my" => ["D"],
+                    "house" => ["N"],
+                    "houses" => ["N"])
+    productions = Dict("S" => [["NP","VP"], ["VP"]],
+                        "NP" => [["D", "N"], ["N"]],
+                        "VP" => [["V"], ["V","NP"], ["V", "NP", "PP"]],
+                        "PP" => [["D","NP"]])
+    sent = CFG.generate(productions, lexicon)
+    z = ["S", ["NP", ["D", ["the"]], ["Adj", ["adventurous"]], ["N", ["dog"]]], ["VP", ["V", ["eats"]], ["NP", ["N", ["bacon"]], ["N", ["grease"]]]]]
+    CFG.tree_img(z, "testfile.png")
+    @test filesize("testfile.png") > 0
+end
 #println()
 #tokens = ["the","dog","runs","quite","fast"]
 #non_terminals = ["NP","VP","Av","Aj","D","N", "V", "AP", "S"]
