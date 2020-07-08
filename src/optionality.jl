@@ -12,14 +12,14 @@ This is a utility function that takes a sequence of right hand side
 elements and generates a bit mask representing which ones are optional
 
 """
-function gen_opt_mask(rhs_pieces::Array; opt_marker::String="(")
+function gen_opt_mask(rhs_pieces::Array; opt_marker::String = "(")
     mask = Bool[]
     for rhs_piece in rhs_pieces
         if rhs_piece[1:1] == opt_marker
             push!(mask, true)
         else
             push!(mask, false)
-        end 
+        end
     end
     return mask
 end
@@ -37,9 +37,11 @@ end
 This function essentially just removes the `opt_marker` from the beginning of 
 all right hand side elements.
 """
-function strip_opt(rhs_pieces::Array; opt_marker::String="(")
-    return [rhs_piece[1:1] != opt_marker ? rhs_piece : rhs_piece[2:end - 1] 
-                for rhs_piece in rhs_pieces]
+function strip_opt(rhs_pieces::Array; opt_marker::String = "(")
+    return [
+        rhs_piece[1:1] != opt_marker ? rhs_piece : rhs_piece[2:end-1]
+        for rhs_piece in rhs_pieces
+    ]
 end
 
 """
@@ -64,7 +66,7 @@ function interleave_opts(rhs_pieces::Array, opt_mask::Array, pres_mask::Array)
         else
             if pres_mask[pres_i] == 1
                 push!(res, rhs_pieces[mask_i])
-            end 
+            end
             pres_i += 1
         end
     end
@@ -85,7 +87,7 @@ the specified number of bits.
 E.g. 3 bits can represent a value up to 14
 """
 function top_count(n_bits::Int)
-    if n_bits == 0 
+    if n_bits == 0
         return 0
     else
         count = 2 * 2^(n_bits - 1)
@@ -109,15 +111,15 @@ function gen_opt_poss(rhs_pieces::Array)
     opt_mask = gen_opt_mask(rhs_pieces)
     n_opts = sum(opt_mask)
     #just return the whole rhs if there's no optional elements
-    if n_opts == 0 
+    if n_opts == 0
         return [rhs_pieces]
-    end 
+    end
     rhs_pieces = strip_opt(rhs_pieces)
     #this tells us how high we have to count when computing the present masks
-    top_end = top_count(n_opts) 
+    top_end = top_count(n_opts)
     poss = []
-    for i=0:(top_end - 1)
-        pres_mask = digits(i, base=2, pad=n_opts)
+    for i = 0:(top_end-1)
+        pres_mask = digits(i, base = 2, pad = n_opts)
         push!(poss, interleave_opts(rhs_pieces, opt_mask, pres_mask))
     end
     return poss

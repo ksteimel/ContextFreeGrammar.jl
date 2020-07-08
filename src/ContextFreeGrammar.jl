@@ -18,5 +18,3 @@ export generate
 export get_depth
 export tree_img
 end # module
-
-
