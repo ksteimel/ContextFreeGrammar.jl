@@ -66,7 +66,6 @@ function read_rules(rule_text)
     # get dictionaries initialized
     for line in lines
         if strip(line)[1] == '#'
-            print(line)
             continue
         end
         if occursin(":", line)
@@ -119,7 +118,7 @@ function read_rules(rule_text)
             end
         else
             println(line)
-            error("Incorrect line format")
+            error("Incorrect line format. Line contained neither : nor -> (required to indicate lexical vs syntactic rules).")
         end
     end
     return productions, lexicon
