@@ -1,14 +1,27 @@
 [![Build Status](https://ci.ksteimel.duckdns.org/api/badges/ksteimel/CFG.jl/status.svg)](https://ci.ksteimel.duckdns.org/ksteimel/CFG.jl)
 
-This is a project for parsing context free grammars and feature grammars using julia
+## This is a project for parsing context free grammars and feature grammars using julia
 
-The goals of this project are the following: 
--[x] Buila a method for ingestion of context free rules
--[] Build a method for ingestion of feature grammar rules
--[x] Implement a context free parsing algorithm most likely the Earley parser to start with
--[] Implement unification 
--[] Use a modular architecture that allows for new parsing algorithms to be used and new rule intake methods
-
+# Project Status: 
+- [X] Basic functionality
+  - [X] Ingest of context free rules
+  - [X] Parse using Earley parsing algorithm
+  - [X] Save trees to a file using `Luxor.jl`
+- [ ] Optionality and repetition
+  - [X] Handle optionality
+  - [ ] Repetition
+- [ ] Other parsing algorithms
+   - [X] Rule binarization
+   - [ ] Parse using CYK algorithm
+   - [ ] Rule debinarization
+- [ ] Feature grammar
+   - [ ] Ingest feature grammar rules
+   - [ ] Implement non-hierarchical unification
+   - [ ] Integrate unification into Earley parsing algorithm
+- [ ] Design
+   - [ ] Use structs for nodes in lexicon and productions
+   - [ ] Use struct for lexicon and productions with flags for optionality, repetition, features etc so that 
+   parsing algorithms can use these traits to stipulate what types of grammars they can work with. *
 
 # Installation
 

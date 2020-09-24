@@ -17,13 +17,13 @@ function generate_recur(productions, rev_lexicon, symbol)::String
         opt_indices = collect(1:length(rev_lexicon[symbol]))
         selection_ind = rand(opt_indices, 1)[1]
         return rev_lexicon[symbol][selection_ind]
-        
+
     elseif !lex_flag || symbol in keys(productions)
         # we have a non-terminal
         # we need to call generate on the parts of the non-terminal
         opt_indices = collect(1:length(productions[symbol]))
         selection_ind = rand(opt_indices, 1)[1]
-        constituents =  productions[symbol][selection_ind]
+        constituents = productions[symbol][selection_ind]
         sent_fragment = ""
         for constituent in constituents
             sent_fragment *= generate_recur(productions, rev_lexicon, constituent) * " "

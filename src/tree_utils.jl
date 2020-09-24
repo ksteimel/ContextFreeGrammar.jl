@@ -16,7 +16,7 @@ end
 """
 Returns the maximum depth of the tree
 """
-function get_depth(tree, marker=0)
+function get_depth(tree, marker = 0)
     if typeof(tree) <: Array && length(tree) == 1
         return marker
     else

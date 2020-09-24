@@ -59,7 +59,7 @@ These hash directions are ideal for the earley parsing algorithm
 """
 function read_rules(rule_text)
     # each rule should be on a new line
-    lines = split(rule_text, "\n", keepempty=false)
+    lines = split(rule_text, "\n", keepempty = false)
     lines = [line for line in lines if strip(line) != ""]
     productions = Dict()#"null" => ["null"])
     lexicon = Dict()#"null" => ["null"]) # doing this as a cludge to 
@@ -79,13 +79,12 @@ function read_rules(rule_text)
             right_hand = strip(pieces[2])
             # check to see if we have a multi-part right hand 
             if occursin("{", right_hand)
-                tokens = split(right_hand, r"({|,|}) ?", keepempty=false)
+                tokens = split(right_hand, r"({|,|}) ?", keepempty = false)
                 left_hand = strip(left_hand)
                 for token_seg in tokens
                     token = string(token_seg)
                     if token in keys(lexicon)
-                        lexicon[token] = push!(lexicon[token],
-                                                    left_hand)
+                        lexicon[token] = push!(lexicon[token], left_hand)
                     else
                         lexicon[token] = [left_hand]
                     end
