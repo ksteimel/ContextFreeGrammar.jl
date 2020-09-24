@@ -1,6 +1,14 @@
 using Test
 using AbstractTrees
 using ContextFreeGrammar
+function sort_val_list(input_dict::Dict)
+    """
+    This is a little function to sort the list values of a dictionary.
+    """
+    for key in keys(input_dict)
+        input_dict[key] = sort(input_dict[key])
+    end
+end
 @testset "rule_reading" begin
     simple_rules = """
       NP -> D N
@@ -34,7 +42,83 @@ using ContextFreeGrammar
     productions, lexicon = read_rules(ambiguous_production)
     res_productions = Dict("NP" => [["D", "N"], ["Adj", "N"]])
     @test productions == res_productions
-    @testset "syntactic_optionality" begin
+    @testset "optionality" begin
+        rule_w_optionality = """NP -> (D) N"""
+        productions, lexicon = read_rules(rule_w_optionality)
+        res_productions = Dict("NP" => [["N"], ["D","N"]])
+        @test productions == res_productions
+        rule_w_multi_optionality = """NP -> (D) (Adj) N"""
+        productions, lexicon = read_rules(rule_w_multi_optionality)
+        res_productions = Dict("NP" => [["N"], ["D", "N"], ["Adj", "N"], ["D", "Adj", "N"]])
+        @test productions == res_productions
+        rule_w_opt_both_sides = """NP -> (D) (Adj) N (SC)"""
+        productions, lexicon = read_rules(rule_w_opt_both_sides)
+        res_productions = Dict("NP" => [
+                                        ["N"], 
+                                        ["D", "N"], 
+                                        ["Adj", "N"], 
+                                        ["D", "Adj", "N"], 
+                                        ["N", "SC"], 
+                                        ["D", "N", "SC"], 
+                                        ["Adj", "N", "SC"], 
+                                        ["D", "Adj", "N", "SC"]
+                                        ])
+                                        
+        @test productions == res_productions
+        problematic_ruleset = """
+                                S -> NP VP
+                                NP -> (D) (AP) N (PP)
+                                PP -> P NP
+                                AP -> (AdvP) A
+                                AdvP -> (AdvP) Adv
+                                VP -> V
+                                VP -> V NP
+                                VP -> V NP NP
+                                VP -> V NP PP
+
+                                A : tired
+                                N : dog
+                                V : ran
+                                D : the
+                                P : on
+                                Adv : extremely
+                              """
+        res_productions = Dict( "S" => [
+                                        ["NP", "VP"]],
+                                "PP" => [
+                                            ["P",
+                                            "NP"]
+                                        ],
+                                "AP" => [
+                                            ["A"],
+                                            ["AdvP", "A"]
+                                        ],
+                                "AdvP" => [
+                                            ["Adv"],
+                                            ["AdvP", "Adv"]
+                                ],
+                                "VP" => [
+                                            ["V"],
+                                            ["V", "NP"],
+                                            ["V", "NP", "NP"],
+                                            ["V", "NP", "PP"]
+                                ],
+                                "NP" => [
+                                        ["N"], 
+                                        ["D", "N"], 
+                                        ["Adj", "N"], 
+                                        ["D", "Adj", "N"], 
+                                        ["N", "PP"], 
+                                        ["D", "N", "PP"], 
+                                        ["Adj", "N", "PP"], 
+                                        ["D", "Adj", "N", "PP"]
+                                        ])
+        productions, lexicon = read_rules(problematic_ruleset)
+        productions = sort_val_list(productions)
+        res_productions = sort_val_list(res_productions)
+        @test productions == res_productions
+    end
+    @testset "syntactic_choices" begin
         rule_w_syntactic_options = """NP -> Q N | D N"""
         productions, lexicon = read_rules(rule_w_syntactic_options)
         res_productions = Dict("NP" => [["Q", "N"], ["D", "N"]])
@@ -504,8 +588,17 @@ end
         )
         sentence = ["the", "cat", "has", "been", "looking", "in", "the", "house"]
         chart = parse_earley(productions, lexicon, sentence, debug = false)
-
-        @test target_tree == trees[1]
+        trees = chart_to_tree(chart, sentence)
+        #target_tree = [
+        #    "S",
+        #    ["NP", ["D", ["the"]], ["Adj", ["large"]], ["N", ["dog"]]],
+        #    [
+        #        "VP",
+        #        ["V", ["ran"]],
+        #        ["PP", ["P", ["by"]], ["NP", ["D", ["the"]], ["N", ["house"]]]],
+        #    ],
+        #]
+        @test length(trees) != 0 
         @testset "rule_construction_optional_components" begin
             # test generation of rules in cases of multiple optionality
             two_opt_components = ["(D)", "N", "(PP)"]
@@ -526,6 +619,29 @@ end
             res_rhs = sort(ContextFreeGrammar.gen_opt_poss(three_opt_components))
             @test res_rhs == target_rhs
         end
+        problematic_ruleset = """
+        S -> NP VP
+        NP -> (D) (AP) N (PP)
+        PP -> P NP
+        AP -> (AdvP) A
+        AdvP -> (AdvP) Adv
+        VP -> V
+        VP -> V NP
+        VP -> V NP NP
+        VP -> V NP PP
+
+        A : tired
+        N : dog
+        V : ran
+        D : the
+        P : on
+        Adv : extremely
+        """
+        sentence = ["the", "tired", "dog", "ran"]
+        productions, lexicon = read_rules(problematic_ruleset)
+        chart = parse_earley(productions, lexicon, sentence)
+        trees = chart_to_tree(chart, sentence)
+        @test length(trees) != 0
     end
 end
 @testset "drawing_utils" begin
