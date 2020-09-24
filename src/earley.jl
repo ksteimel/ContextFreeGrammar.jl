@@ -289,10 +289,12 @@ was successful.
 if it returns false then the sentence is not in the grammar.
 """
 function chart_recognize(charts)
-    final_state = charts[end][end]
-    if final_state.left_hand == "γ" && final_state.right_hand == ["S"]
-        if final_state.dot_index == length(final_state.right_hand) + 1
-            return true
+    final_states = charts[end]
+    for final_state in final_states
+        if final_state.left_hand == "γ" && final_state.right_hand == ["S"]
+            if final_state.dot_index == length(final_state.right_hand) + 1
+                return true
+            end
         end
     end
     return false
