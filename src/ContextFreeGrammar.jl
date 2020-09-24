@@ -17,4 +17,5 @@ export chart_to_tree
 export generate
 export get_depth
 export tree_img
+export get_bracketed_string
 end # module
