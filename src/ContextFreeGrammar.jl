@@ -18,4 +18,5 @@ export generate
 export get_depth
 export tree_img
 export get_bracketed_string
+export identify_missing_left_hand_sides
 end # module
