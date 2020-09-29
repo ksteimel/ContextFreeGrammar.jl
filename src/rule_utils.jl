@@ -37,7 +37,24 @@ function binarize!(productions, lexicon)
     end
     return productions, lexicon, pairings
 end
+"""
+This function expands symbols that indicate repetition a set number of times.
+    In essence, it creates clones of rhe right hand side passed in with some number
+    of repeated elements.
 
+# Examples
+```julia-repl
+julia> expand_repetition(["D", "AP+", "N", "PP+"], repeat_count=2)
+[["D","AP", "N", "PP"],
+ ["D", "AP", "AP", "N", "PP"],
+ ["D", "AP", "AP", "N", "PP", "PP"],
+ ["D", "AP", "N", "PP", "PP"]]
+```
+
+"""
+function expand_repetition(rhs; repetition_symbol="+", repeat_count=5)
+
+end
 """
 This function reads in a piece of text that contains various rules 
 where the form of syntactic rules is X -> Y Z
@@ -46,9 +63,6 @@ and the form of lexical rules is V : X
 
 lines that begin with "#" are comments
 
-todo: 
-    - optionality using parenthesis
-    - repetition using *
     - features
     
 the lexicon returned takes in words and yields the part of speech 
