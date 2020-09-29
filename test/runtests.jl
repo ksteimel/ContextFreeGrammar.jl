@@ -61,6 +61,29 @@ end
                                              ["D", "AP", "AP", "AP", "AP", "AP", "N"],
                                              ["D", "AP", "AP", "AP", "AP", "AP", "AP", "N"]])
         @test productions == expected_productions
+        complex_ruleset = """S -> NP VP 
+                            NP -> D AP+ N 
+                            VP -> V 
+                            AP -> A
+                            A : wonderful
+                            A : brown
+                            A : adorable
+                            N : dog
+                            D : the
+                            V: ran
+                            """
+        productions, lexicon = read_rules(complex_ruleset)
+        expected_productions = Dict("NP" => [["D", "AP", "N"],
+                                             ["D", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "AP", "AP", "AP", "N"]],
+                                    "AP" => [["A"]],
+                                    "S" => [["NP", "VP"]],
+                                    "VP" => [["V"]]
+                                    )
+        @test productions == expected_productions
     end
     @testset "optionality" begin
         rule_w_optionality = """NP -> (D) N"""
