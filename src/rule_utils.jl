@@ -89,6 +89,7 @@ and the form of lexical rules is V : X
 
 lines that begin with "#" are comments
 
+todo
     - features
     
 the lexicon returned takes in words and yields the part of speech 
