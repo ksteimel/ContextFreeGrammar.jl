@@ -42,6 +42,26 @@ end
     productions, lexicon = read_rules(ambiguous_production)
     res_productions = Dict("NP" => [["D", "N"], ["Adj", "N"]])
     @test productions == res_productions
+    @testset "repetition" begin
+        rule_w_repetition = """NP -> AP+ N"""
+        productions, lexicon = read_rules(rule_w_repetition)
+        expected_productions = Dict("NP" => [["AP", "N"],
+                                             ["AP", "AP", "N"],
+                                             ["AP", "AP", "AP", "N"],
+                                             ["AP", "AP", "AP", "AP", "N"],
+                                             ["AP", "AP", "AP", "AP", "AP", "N"],
+                                             ["AP", "AP", "AP", "AP", "AP", "AP", "N"]])
+        @test productions == expected_productions
+        rule_w_repetition2 = """NP -> D AP+ N"""
+        productions, lexicon = read_rules(rule_w_repetition2)
+        expected_productions = Dict("NP" => [["D", "AP", "N"],
+                                             ["D", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "AP", "AP", "N"],
+                                             ["D", "AP", "AP", "AP", "AP", "AP", "AP", "N"]])
+        @test productions == expected_productions
+    end
     @testset "optionality" begin
         rule_w_optionality = """NP -> (D) N"""
         productions, lexicon = read_rules(rule_w_optionality)
