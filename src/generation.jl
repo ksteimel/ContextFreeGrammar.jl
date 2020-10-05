@@ -12,8 +12,8 @@ function generate_recur(productions, rev_lexicon, symbol; depth=1)::String
             lex_flag = true
         end
     end
-    # we should only recurse 1000 times. Grammars can be infinitely recursive
-    if depth > 1000
+    # we should only recurse 50 times. Grammars can be infinitely recursive
+    if depth > 50
         return "<incomplete due to recursion overflow>"
     end
     if lex_flag || symbol in keys(rev_lexicon)
@@ -30,7 +30,7 @@ function generate_recur(productions, rev_lexicon, symbol; depth=1)::String
         constituents = productions[symbol][selection_ind]
         sent_fragment = ""
         for constituent in constituents
-            sent_fragment *= generate_recur(productions, rev_lexicon, constituent) * " "
+            sent_fragment *= generate_recur(productions, rev_lexicon, constituent, depth=depth + 1) * " "
         end
         return sent_fragment
     end
