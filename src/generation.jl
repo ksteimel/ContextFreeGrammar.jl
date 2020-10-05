@@ -2,7 +2,7 @@
 """
 Generate random sentence given productions and lexicon
 """
-function generate_recur(productions, rev_lexicon, symbol)::String
+function generate_recur(productions, rev_lexicon, symbol; depth=1)::String
     lex_flag = false
     lex_bias = 0.7
     if symbol in keys(productions) && symbol in keys(rev_lexicon)
@@ -11,6 +11,10 @@ function generate_recur(productions, rev_lexicon, symbol)::String
         if rand() < lex_bias
             lex_flag = true
         end
+    end
+    # we should only recurse 1000 times. Grammars can be infinitely recursive
+    if depth > 1000
+        return "<incomplete due to recursion overflow>"
     end
     if lex_flag || symbol in keys(rev_lexicon)
         # we have a terminal this is the base case
