@@ -1,13 +1,13 @@
-using CFG
+using ContextFreeGrammar
 rule_file = open("./sample_rules.txt")
 rule_text = readlines(rule_file)
 rule_text = join(rule_text, "\n")
-productions, lexicon = CFG.read_rules(rule_text)
+productions, lexicon = read_rules(rule_text)
 sents = []
 function gen_multiple(productions, lexicon, n_sents)
     sents = []
     for i = 1:n_sents
-        push!(sents, CFG.generate(productions, lexicon))
+        push!(sents, generate(productions, lexicon))
     end
     return sents
 end
