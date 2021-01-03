@@ -37,8 +37,8 @@ end
 This function essentially just removes the `opt_marker` from the beginning of 
 all right hand side elements.
 """
-function strip_opt(rhs_pieces::Array; opt_marker::String = "(")
-    return [
+function strip_opt(rhs_pieces::Array{String}; opt_marker::String = "(")
+    return String[
         rhs_piece[1:1] != opt_marker ? rhs_piece : rhs_piece[2:end-1]
         for rhs_piece in rhs_pieces
     ]
@@ -107,7 +107,7 @@ end
 ...
 
 """
-function gen_opt_poss(rhs_pieces::Array)
+function gen_opt_poss(rhs_pieces::Array{String})
     opt_mask = gen_opt_mask(rhs_pieces)
     n_opts = sum(opt_mask)
     #just return the whole rhs if there's no optional elements
@@ -117,7 +117,7 @@ function gen_opt_poss(rhs_pieces::Array)
     rhs_pieces = strip_opt(rhs_pieces)
     #this tells us how high we have to count when computing the present masks
     top_end = top_count(n_opts)
-    poss = []
+    poss = Array{String,1}[]
     for i = 0:(top_end-1)
         pres_mask = digits(i, base = 2, pad = n_opts)
         push!(poss, interleave_opts(rhs_pieces, opt_mask, pres_mask))
