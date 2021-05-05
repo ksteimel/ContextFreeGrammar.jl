@@ -1,4 +1,4 @@
-[![Build Status](https://ci.ksteimel.duckdns.org/api/badges/ksteimel/CFG.jl/status.svg)](https://ci.ksteimel.duckdns.org/ksteimel/CFG.jl)
+[![Build Status](https://ci.steimel.info/api/badges/ksteimel/ContextFreeGrammar.jl/status.svg)](https://ci.steimel.info/ksteimel/ContextFreeGrammar.jl)
 
 ## This is a project for parsing context free grammars and feature grammars using julia
 
