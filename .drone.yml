@@ -5,9 +5,7 @@ steps:
   image: julia:latest
   commands:
     - julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
-                                               Pkg.instantiate()'
-    - export JULIA_NUM_THREADS=4
-    - julia test/runtests.jl
+                                               Pkg.test()'
   when:
     event:
       - pull_request
