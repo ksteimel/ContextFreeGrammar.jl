@@ -4,8 +4,7 @@ steps:
 - name: logisitic_regression
   image: julia:latest
   commands:
-    - julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
-                                               Pkg.test()'
+    - julia -e 'using Pkg; Pkg.activate("."); Pkg.test()'
   when:
     event:
       - pull_request
